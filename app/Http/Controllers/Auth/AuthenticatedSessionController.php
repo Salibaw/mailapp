@@ -42,6 +42,8 @@ class AuthenticatedSessionController extends Controller
                 return route('admin.dashboard');
             case 'staff':
                 return route('admin.dashboard');
+            case 'mahasiswa':
+                return route('mahasiswa.dashboard');
             default:
                 return route('mahasiswa.dashboard');
         }

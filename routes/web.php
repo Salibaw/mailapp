@@ -2,12 +2,15 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\admin\DashboardController;
+use App\Http\Controllers\admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\admin\UserController;
 use App\Http\Controllers\admin\UserTypeController;
 use App\Http\Controllers\admin\StatusSuratController;
 use App\Http\Controllers\admin\SifatSuratController;
 use App\Http\Controllers\admin\TemplateController;
+use App\Http\Controllers\mahasiswa\SuratKeluarController as MahasiswaSuratKeluarController;
+use App\Http\Controllers\mahasiswa\SuratMasukController as MahasiswaSuratMasukController;
+use App\Http\Controllers\mahasiswa\DashboardController as MahasiswaDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,7 +34,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->name('admin.')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     // CRUD untuk User
     Route::resource('users', UserController::class);
@@ -45,11 +48,15 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->name('admin.')->grou
     // CRUD untuk Sifat Surat
     Route::resource('sifat-surat', SifatSuratController::class)->except(['show']);
 
-    // CRUD untuk Template Surat
+    // CRUD untuk Template Surat    
     Route::resource('template-surat', TemplateController::class);
 });
 
-Route::get('/dashboard', function () {
-    return redirect()->route('admin.dashboard');
-})->middleware(['auth'])->name('dashboard');
+Route::prefix('mahasiswa')->middleware(['auth', 'role:mahasiswa'])->name('mahasiswa.')->group(function () {
+    Route::get('/dashboard', [MahasiswaDashboardController::class, 'index'])->name('dashboard');
+    // Tambahkan rute lain yang diperlukan untuk mahasiswa
+    Route::resource('surat-masuk', MahasiswaSuratMasukController::class)->except(['show']);
+    Route::resource('surat-keluar', MahasiswaSuratKeluarController::class)->except(['show']);
+});
+
 require __DIR__ . '/auth.php';
