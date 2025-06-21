@@ -57,6 +57,7 @@ Route::prefix('mahasiswa')->middleware(['auth', 'role:mahasiswa'])->name('mahasi
     // Tambahkan rute lain yang diperlukan untuk mahasiswa
     Route::resource('surat-masuk', MahasiswaSuratMasukController::class)->except(['show']);
     Route::resource('surat-keluar', MahasiswaSuratKeluarController::class)->except(['show']);
+    Route::get('search-users', [MahasiswaSuratKeluarController::class, 'searchUsers'])->name('search-users');
 });
 
 require __DIR__ . '/auth.php';

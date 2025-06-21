@@ -37,9 +37,21 @@ class User extends Authenticatable
      */
     public function role(): BelongsTo
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Role::class,'role_id');
     }
 
+    /**
+     * Get the outgoing letters received by the user.
+     */
+    public function suratKeluarDiterima(): HasMany
+    {
+        return $this->hasMany(SuratKeluar::class, 'penerima_id');
+    }
+
+    public function penerima(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'penerima_id');
+    }
     /**
      * Get the incoming letters recorded by the user.
      */

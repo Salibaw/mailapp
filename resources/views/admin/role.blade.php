@@ -49,7 +49,7 @@
                         <td class="px-6 py-4">{{ $index + 1 }}</td>
                         <td class="px-6 py-4">{{ $role->name }}</td>
                         <td class="px-6 py-4 flex space-x-2">
-                            <button onclick="openEditModal({{ $role->id }}, '{{ $role->name }}')"
+                            <button onclick="openEditModal({{ $role->id }}, '{{ addslashes($role->name) }}')"
                                     class="text-indigo-600 hover:text-indigo-800">
                                 <i class="fas fa-edit"></i> Edit
                             </button>

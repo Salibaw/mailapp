@@ -18,22 +18,22 @@ class DashboardController extends Controller
 
         // Ambil surat keluar yang diajukan oleh mahasiswa ini
         $suratDiajukan = SuratKeluar::where('user_id', $user->id)
-                                    ->with('status')
-                                    ->latest()
-                                    ->take(5) // Ambil 5 surat terbaru
-                                    ->get();
+            ->with('status')
+            ->latest()
+            ->take(5) // Ambil 5 surat terbaru
+            ->get();
 
         $totalSuratDiajukan = SuratKeluar::where('user_id', $user->id)->count();
         $suratMenungguPersetujuan = SuratKeluar::where('user_id', $user->id)
-                                                ->whereHas('status', function($query) {
-                                                    $query->where('nama_status', 'Menunggu Persetujuan');
-                                                })
-                                                ->count();
+            ->whereHas('status', function ($query) {
+                $query->where('nama_status', 'Menunggu Persetujuan');
+            })
+            ->count();
         $suratDisetujui = SuratKeluar::where('user_id', $user->id)
-                                      ->whereHas('status', function($query) {
-                                          $query->where('nama_status', 'Disetujui');
-                                      })
-                                      ->count();
+            ->whereHas('status', function ($query) {
+                $query->where('nama_status', 'Disetujui');
+            })
+            ->count();
 
         return view('mahasiswa.dashboard', compact(
             'user',

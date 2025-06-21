@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nomor_surat')->unique()->nullable(); // Akan terisi setelah disetujui
             $table->date('tanggal_surat')->nullable(); // Akan terisi setelah disetujui
             $table->string('perihal');
-            $table->string('penerima');
+            $table->foreignId('penerima_id')->constrained('users')->onDelete('restrict'); // Penerima surat, bisa dari tabel penerima_surats
             $table->text('isi_surat')->nullable(); // Bisa diisi manual atau dari template
             $table->string('lampiran')->nullable(); // Path ke file lampiran
 

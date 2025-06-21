@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('nomor_surat');
             $table->date('tanggal_surat');
             $table->date('tanggal_terima');
-            $table->string('pengirim');
+            $table->foreignId('pengirim_id')->constrained('users')->onDelete('restrict'); // Pengirim surat, bisa dari tabel pengirim_surats
             $table->string('perihal');
             $table->text('isi_ringkas')->nullable();
             $table->string('lampiran')->nullable(); // Path ke file lampiran

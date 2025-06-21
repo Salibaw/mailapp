@@ -17,7 +17,7 @@ class SuratMasuk extends Model
         'nomor_surat',
         'tanggal_surat',
         'tanggal_terima',
-        'pengirim',
+        'pengirim_id',
         'perihal',
         'isi_ringkas',
         'lampiran',
@@ -61,5 +61,10 @@ class SuratMasuk extends Model
     public function disposisi(): HasMany
     {
         return $this->hasMany(Disposisi::class);
+    }
+
+    public function pengirim()
+    {
+        return $this->belongsTo(User::class, 'pengirim_id');
     }
 }

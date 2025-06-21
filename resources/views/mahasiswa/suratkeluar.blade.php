@@ -45,7 +45,6 @@
                     <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Penerima</th>
                     <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Status</th>
                     <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Sifat</th>
-                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Aksi</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -53,11 +52,10 @@
     </div>
 </div>
 
-<!-- Modal Create -->
 <div id="createModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg p-6 w-full max-w-2xl">
+    <div class="bg-white rounded-lg p-6 max-w-xl">
         <h3 class="text-lg font-semibold mb-4">Buat Surat Keluar</h3>
-        <form action="{{ route('mahasiswa.surat-keluar.store') }}" method="POST" enctype="multipart/form-data">
+        <form id="createForm" action="{{ route('mahasiswa.surat-keluar.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -90,9 +88,11 @@
             </div>
             <div class="mb-4">
                 <label for="penerima" class="block text-sm font-medium text-gray-700">Penerima</label>
-                <input type="text" name="penerima" id="penerima" value="{{ old('penerima') }}"
-                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                       autocomplete="off" required>
+                <select name="penerima_id" id="penerima"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        autocomplete="off" required>
+                    <option value="">Pilih Penerima</option>
+                </select>
                 @error('penerima')
                     <span class="text-red-600 text-sm">{{ $message }}</span>
                 @enderror
@@ -144,109 +144,12 @@
             </div>
             <div class="flex justify-end space-x-2">
                 <button type="button" onclick="closeModal('createModal')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Batal</button>
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Simpan</button>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Submit</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal Edit -->
-<div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg p-6 w-full max-w-2xl">
-        <h3 class="text-lg font-semibold mb-4">Edit Surat Keluar</h3>
-        <form id="editForm" method="POST" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label for="edit_nomor_surat" class="block text-sm font-medium text-gray-700">Nomor Surat</label>
-                    <input type="text" name="nomor_surat" id="edit_nomor_surat"
-                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                           autocomplete="off" required>
-                    @error('nomor_surat')
-                        <span class="text-red-600 text-sm">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div>
-                    <label for="edit_tanggal_surat" class="block text-sm font-medium text-gray-700">Tanggal Surat</label>
-                    <input type="date" name="tanggal_surat" id="edit_tanggal_surat"
-                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                           autocomplete="off" required>
-                    @error('tanggal_surat')
-                        <span class="text-red-600 text-sm">{{ $message }}</span>
-                    @enderror
-                </div>
-            </div>
-            <div class="mb-4">
-                <label for="edit_perihal" class="block text-sm font-medium text-gray-700">Perihal</label>
-                <input type="text" name="perihal" id="edit_perihal"
-                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                       autocomplete="off" required>
-                @error('perihal')
-                    <span class="text-red-600 text-sm">{{ $message }}</span>
-                @enderror
-            </div>
-            <div class="mb-4">
-                <label for="edit_penerima" class="block text-sm font-medium text-gray-700">Penerima</label>
-                <input type="text" name="penerima" id="edit_penerima"
-                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                       autocomplete="off" required>
-                @error('penerima')
-                    <span class="text-red-600 text-sm">{{ $message }}</span>
-                @enderror
-            </div>
-            <div class="mb-4">
-                <label for="edit_sifat_surat_id" class="block text-sm font-medium text-gray-700">Sifat Surat</label>
-                <select name="sifat_surat_id" id="edit_sifat_surat_id"
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        autocomplete="off" required>
-                    <option value="">Pilih Sifat Surat</option>
-                    @foreach ($sifatSurat as $sifat)
-                        <option value="{{ $sifat->id }}">{{ $sifat->nama_sifat }}</option>
-                    @endforeach
-                </select>
-                @error('sifat_surat_id')
-                    <span class="text-red-600 text-sm">{{ $message }}</span>
-                @enderror
-            </div>
-            <div class="mb-4">
-                <label for="edit_template_surat_id" class="block text-sm font-medium text-gray-700">Template Surat</label>
-                <select name="template_surat_id" id="edit_template_surat_id"
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        autocomplete="off">
-                    <option value="">Pilih Template (Opsional)</option>
-                    @foreach ($templateSurat as $template)
-                        <option value="{{ $template->id }}">{{ $template->nama_template }}</option>
-                    @endforeach
-                </select>
-                @error('template_surat_id')
-                    <span class="text-red-600 text-sm">{{ $message }}</span>
-                @enderror
-            </div>
-            <div class="mb-4">
-                <label for="edit_isi_surat" class="block text-sm font-medium text-gray-700">Isi Surat</label>
-                <textarea name="isi_surat" id="edit_isi_surat" rows="6"
-                          class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                          autocomplete="off" required></textarea>
-                @error('isi_surat')
-                    <span class="text-red-600 text-sm">{{ $message }}</span>
-                @enderror
-            </div>
-            <div class="mb-4">
-                <label for="edit_lampiran" class="block text-sm font-medium text-gray-700">Lampiran Baru (PDF, max 5MB)</label>
-                <input type="file" name="lampiran" id="edit_lampiran" accept=".pdf"
-                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                @error('lampiran')
-                    <span class="text-red-600 text-sm">{{ $message }}</span>
-                @enderror
-            </div>
-            <div class="flex justify-end space-x-2">
-                <button type="button" onclick="closeModal('editModal')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Batal</button>
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Simpan</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 <!-- JavaScript untuk Modal, Alert, dan Template -->
 <script>
@@ -258,23 +161,10 @@
         document.getElementById(modalId).classList.add('hidden');
     }
 
-    function openEditModal(id, nomor_surat, tanggal_surat, perihal, penerima, isi_surat, sifat_surat_id, template_surat_id) {
-        document.getElementById('editForm').action = `/mahasiswa/surat-keluar/${id}`;
-        document.getElementById('edit_nomor_surat').value = nomor_surat;
-        document.getElementById('edit_tanggal_surat').value = tanggal_surat;
-        document.getElementById('edit_perihal').value = perihal;
-        document.getElementById('edit_penerima').value = penerima;
-        document.getElementById('edit_isi_surat').value = isi_surat;
-        document.getElementById('edit_sifat_surat_id').value = sifat_surat_id;
-        document.getElementById('edit_template_surat_id').value = template_surat_id || '';
-        openModal('editModal');
-    }
-
     function closeAlert(alertId) {
         document.getElementById(alertId).classList.add('hidden');
     }
 
-    // Auto-hide alert setelah 3 detik
     document.addEventListener('DOMContentLoaded', function () {
         const alerts = document.querySelectorAll('[id^="alert-"]');
         alerts.forEach(alert => {
@@ -283,7 +173,7 @@
             }, 3000);
         });
 
-        // // Load template content
+        // Load template content
         // const templates = @json($templateSurat->pluck('konten', 'id'));
         // document.getElementById('template_surat_id').addEventListener('change', function () {
         //     const templateId = this.value;
@@ -291,12 +181,6 @@
         //         document.getElementById('isi_surat').value = templates[templateId];
         //     }
         // });
-        document.getElementById('edit_template_surat_id').addEventListener('change', function () {
-            const templateId = this.value;
-            if (templateId) {
-                document.getElementById('edit_isi_surat').value = templates[templateId];
-            }
-        });
     });
 </script>
 
@@ -305,6 +189,10 @@
 @push('scripts')
 <!-- jQuery CDN -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 CSS dan JS CDN -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <!-- DataTables CSS dan JS CDN -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -338,10 +226,9 @@
                 { data: 'nomor_surat', name: 'nomor_surat' },
                 { data: 'tanggal_surat', name: 'tanggal_surat' },
                 { data: 'perihal', name: 'perihal' },
-                { data: 'penerima', name: 'penerima' },
+                { data: 'penerima.nama', name: 'penerima.nama' },
                 { data: 'status.nama_status', name: 'status.nama_status' },
                 { data: 'sifat.nama_sifat', name: 'sifat.nama_sifat' },
-                { data: 'action', name: 'action', orderable: false, searchable: false }
             ],
             language: {
                 search: 'Cari:',
@@ -357,29 +244,37 @@
                 processing: 'Memproses...'
             }
         });
+        // Initialize Select2 for penerima
+        $('#penerima').select2({
+            placeholder: 'Pilih Penerima',
+            allowClear: true,
+            ajax: {
+                url: '{{ route("mahasiswa.search-users") }}',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        search: params.term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.map(function (user) {
+                            return {
+                                id: user.id,
+                                text: user.nama + ' (' + user.email + ')'
+                            };
+                        })
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1
+        });
 
         // Pencarian langsung tanpa Enter
         $('#suratKeluarTable_filter input').unbind().bind('keyup', function(e) {
             table.search(this.value).draw();
-        });
-
-        // SweetAlert untuk konfirmasi hapus
-        $(document).on('submit', '.delete-form', function(e) {
-            e.preventDefault();
-            var form = this;
-            Swal.fire({
-                title: 'Yakin ingin menghapus?',
-                text: 'Surat keluar akan dihapus permanen!',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Hapus'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
         });
     });
 </script>

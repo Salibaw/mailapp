@@ -16,7 +16,7 @@ class SuratKeluar extends Model
         'nomor_surat',
         'tanggal_surat',
         'perihal',
-        'penerima',
+        'penerima_id',
         'isi_surat',
         'lampiran',
         'user_id',
@@ -29,6 +29,7 @@ class SuratKeluar extends Model
         'tanggal_surat' => 'date',
     ];
 
+
     /**
      * Get the user who created the outgoing letter.
      */
@@ -36,6 +37,14 @@ class SuratKeluar extends Model
     {
         return $this->belongsTo(User::class);
     }
+    /**
+     * Get the recipient of the outgoing letter.
+     */
+    public function penerima(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'penerima_id');
+    }
+
 
     /**
      * Get the status of the outgoing letter.
