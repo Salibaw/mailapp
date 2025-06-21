@@ -5,24 +5,37 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SifatSurat;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class SifatSuratController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $sifatSurat = SifatSurat::latest()->paginate(10);
-        return view('admin.sifat_surat.index', compact('sifatSurat'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('admin.sifat_surat.create');
+        if ($request->ajax()) {
+            $sifatSurat = SifatSurat::select(['id', 'nama_sifat']);
+            return datatables()->of($sifatSurat)
+                ->addIndexColumn()
+                ->addColumn('action', function ($sifatSurat) {
+                    return '
+                        <button onclick="openEditModal(' . $sifatSurat->id . ', \'' . addslashes($sifatSurat->nama) . '\')"
+                                class="text-indigo-600 hover:text-indigo-800">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <form action="' . route('admin.sifat-surat.destroy', $sifatSurat->id) . '" method="POST" class="delete-form inline" onsubmit="return false;">
+                            ' . csrf_field() . '
+                            ' . method_field('DELETE') . '
+                            <button type="submit" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
+                        </form>';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+        return view('admin.sifat_surat');
     }
 
     /**
@@ -30,21 +43,23 @@ class SifatSuratController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'nama_sifat' => 'required|string|max:255|unique:sifat_surat',
+        $validator = Validator::make($request->all(), [
+            'nama_sifat' => 'required|string|max:255|unique:sifat_surats,nama_sifat',
+        ], [
+            'nama_sifat.required' => 'Nama sifat surat wajib diisi.',
+            'nama_sifat.max' => 'Nama sifat surat maksimum 255 karakter.',
+            'nama_sifat.unique' => 'Nama sifat surat sudah digunakan.',
         ]);
 
-        SifatSurat::create($request->all());
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal menambah sifat surat. Periksa input Anda.');
+        }
 
-        return redirect()->route('admin.sifat-surat.index')->with('success', 'Sifat Surat berhasil ditambahkan.');
-    }
+        SifatSurat::create([
+            'nama' => $request->nama,
+        ]);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(SifatSurat $sifatSurat)
-    {
-        return view('admin.sifat_surat.edit', compact('sifatSurat'));
+        return redirect()->back()->with('success', 'Sifat surat berhasil ditambahkan.');
     }
 
     /**
@@ -52,13 +67,23 @@ class SifatSuratController extends Controller
      */
     public function update(Request $request, SifatSurat $sifatSurat)
     {
-        $request->validate([
-            'nama_sifat' => 'required|string|max:255|unique:sifat_surat,nama_sifat,' . $sifatSurat->id,
+        $validator = Validator::make($request->all(), [
+            'nama_sifat' => 'required|string|max:255|unique:sifat_surats,nama_sifat,' . $sifatSurat->id,
+        ], [
+            'nama_sifat.required' => 'Nama sifat surat wajib diisi.',
+            'nama_sifat.max' => 'Nama sifat surat maksimum 255 karakter.',
+            'nama_sifat.unique' => 'Nama sifat surat sudah digunakan.',
         ]);
 
-        $sifatSurat->update($request->all());
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal memperbarui sifat surat. Periksa input Anda.');
+        }
 
-        return redirect()->route('admin.sifat-surat.index')->with('success', 'Sifat Surat berhasil diperbarui.');
+        $sifatSurat->update([
+            'nama_sifat' => $request->nama_sifat,
+        ]);
+
+        return redirect()->back()->with('success', 'Sifat surat berhasil diperbarui.');
     }
 
     /**
@@ -66,12 +91,11 @@ class SifatSuratController extends Controller
      */
     public function destroy(SifatSurat $sifatSurat)
     {
-        // Periksa apakah ada surat yang masih menggunakan sifat ini
-        if ($sifatSurat->suratMasuk()->count() > 0 || $sifatSurat->suratKeluar()->count() > 0) {
-            return redirect()->route('admin.sifat-surat.index')->with('error', 'Tidak bisa menghapus Sifat Surat ini karena masih digunakan oleh beberapa surat.');
+        try {
+            $sifatSurat->delete();
+            return redirect()->back()->with('success', 'Sifat surat berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus sifat surat: mungkin terkait dengan data lain.');
         }
-
-        $sifatSurat->delete();
-        return redirect()->route('admin.sifat-surat.index')->with('success', 'Sifat Surat berhasil dihapus.');
     }
 }

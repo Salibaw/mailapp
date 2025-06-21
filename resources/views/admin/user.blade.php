@@ -262,7 +262,7 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <!-- jQuery CDN -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!-- DataTables CSS dan JS CDN -->
@@ -345,4 +345,4 @@
         });
     });
 </script>
-@endsection
+@endpush

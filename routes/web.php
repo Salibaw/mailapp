@@ -2,12 +2,12 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\UserTypeController;
-use App\Http\Controllers\Admin\StatusSuratController;
-use App\Http\Controllers\Admin\SifatSuratController;
-use App\Http\Controllers\Admin\TemplateController;
+use App\Http\Controllers\admin\DashboardController;
+use App\Http\Controllers\admin\UserController;
+use App\Http\Controllers\admin\UserTypeController;
+use App\Http\Controllers\admin\StatusSuratController;
+use App\Http\Controllers\admin\SifatSuratController;
+use App\Http\Controllers\admin\TemplateController;
 
 /*
 |--------------------------------------------------------------------------

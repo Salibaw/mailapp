@@ -5,24 +5,37 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\StatusSurat;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class StatusSuratController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $statusSurat = StatusSurat::latest()->paginate(10);
-        return view('admin.status_surat.index', compact('statusSurat'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('admin.status_surat.create');
+        if ($request->ajax()) {
+            $statusSurat = StatusSurat::select(['id', 'nama_status']);
+            return datatables()->of($statusSurat)
+                ->addIndexColumn()
+                ->addColumn('action', function ($statusSurat) {
+                    return '
+                        <button onclick="openEditModal(' . $statusSurat->id . ', \'' . addslashes($statusSurat->nama_status) . '\')"
+                                class="text-indigo-600 hover:text-indigo-800 mr-2">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <form action="' . route('admin.status-surat.destroy', $statusSurat->id) . '" method="POST" class="delete-form inline" onsubmit="return false;">
+                            ' . csrf_field() . '
+                            ' . method_field('DELETE') . '
+                            <button type="submit" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+        return view('admin.status_surat');
     }
 
     /**
@@ -30,21 +43,23 @@ class StatusSuratController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'nama_status' => 'required|string|max:255|unique:status_surat',
+        $validator = Validator::make($request->all(), [
+            'nama_status' => 'required|string|max:255|unique:status_surats,nama_status',
+        ], [
+            'nama_status.required' => 'Nama status surat wajib diisi.',
+            'nama_status.max' => 'Nama status surat maksimum 255 karakter.',
+            'nama_status.unique' => 'Nama status surat sudah digunakan.',
         ]);
 
-        StatusSurat::create($request->all());
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal menambah status surat. Periksa input Anda.');
+        }
 
-        return redirect()->route('admin.status-surat.index')->with('success', 'Status Surat berhasil ditambahkan.');
-    }
+        StatusSurat::create([
+            'nama_status' => $request->nama_status,
+        ]);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(StatusSurat $statusSurat)
-    {
-        return view('admin.status_surat.edit', compact('statusSurat'));
+        return redirect()->back()->with('success', 'Status surat berhasil ditambahkan.');
     }
 
     /**
@@ -52,13 +67,23 @@ class StatusSuratController extends Controller
      */
     public function update(Request $request, StatusSurat $statusSurat)
     {
-        $request->validate([
-            'nama_status' => 'required|string|max:255|unique:status_surat,nama_status,' . $statusSurat->id,
+        $validator = Validator::make($request->all(), [
+            'nama_status' => 'required|string|max:255|unique:status_surats,nama_status,' . $statusSurat->id,
+        ], [
+            'nama_status.required' => 'Nama status surat wajib diisi.',
+            'nama_status.max' => 'Nama status surat maksimum 255 karakter.',
+            'nama_status.unique' => 'Nama status surat sudah digunakan.',
         ]);
 
-        $statusSurat->update($request->all());
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal memperbarui status surat. Periksa input Anda.');
+        }
 
-        return redirect()->route('admin.status-surat.index')->with('success', 'Status Surat berhasil diperbarui.');
+        $statusSurat->update([
+            'nama_status' => $request->nama_status,
+        ]);
+
+        return redirect()->back()->with('success', 'Status surat berhasil diperbarui.');
     }
 
     /**
@@ -66,12 +91,11 @@ class StatusSuratController extends Controller
      */
     public function destroy(StatusSurat $statusSurat)
     {
-        // Periksa apakah ada surat yang masih menggunakan status ini
-        if ($statusSurat->suratMasuk()->count() > 0 || $statusSurat->suratKeluar()->count() > 0) {
-            return redirect()->route('admin.status-surat.index')->with('error', 'Tidak bisa menghapus Status Surat ini karena masih digunakan oleh beberapa surat.');
+        try {
+            $statusSurat->delete();
+            return redirect()->back()->with('success', 'Status surat berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus status surat: mungkin terkait dengan data lain.');
         }
-
-        $statusSurat->delete();
-        return redirect()->route('admin.status-surat.index')->with('success', 'Status Surat berhasil dihapus.');
     }
 }
