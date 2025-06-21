@@ -42,7 +42,8 @@
                 <tr class="bg-gray-100">
                     <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">No</th>
                     <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Nama Template</th>
-                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Tipe</th>
+                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Jenis Surat</th>
+                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Pembuat</th>
                     <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Aksi</th>
                 </tr>
             </thead>
@@ -53,12 +54,12 @@
 
 <!-- Modal Create -->
 <div id="createModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg p-6 w-full max-w-lg">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
         <h3 class="text-lg font-semibold mb-4">Tambah Template Surat</h3>
-        <form action="{{ route('admin.template-surat.store') }}" method="POST">
+        <form action="{{ route('admin.templates.store') }}" method="POST">
             @csrf
             <div class="mb-4">
-                <label for="nama_template" class="block text-sm font-medium text-gray-700">Nama Template</label>
+                <label for="nama_template" class="block text-sm font-medium text.gray-700">Nama Template</label>
                 <input type="text" name="nama_template" id="nama_template" value="{{ old('nama_template') }}"
                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                        autocomplete="off" required>
@@ -67,25 +68,21 @@
                 @enderror
             </div>
             <div class="mb-4">
-                <label for="konten" class="block text-sm font-medium text-gray-700">Konten Template</label>
-                <textarea name="konten" id="konten" rows="6"
-                          class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                          autocomplete="off" required>{{ old('konten') }}</textarea>
-                @error('konten')
+                <label for="jenis_surat" class="block text-sm font-medium text-gray-700">Jenis Surat</label>
+                <input type="text" name="jenis_surat" id="jenis_surat" value="{{ old('jenis_surat') }}"
+                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                       autocomplete="off" required>
+                @error('jenis_surat')
                     <span class="text-red-600 text-sm">{{ $message }}</span>
                 @enderror
             </div>
             <div class="mb-4">
-                <label for="tipe" class="block text-sm font-medium text-gray-700">Tipe</label>
-                <select name="tipe" id="tipe"
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        autocomplete="off" required>
-                    <option value="Surat Masuk" {{ old('tipe') == 'Surat Masuk' ? 'selected' : '' }}>Surat Masuk</option>
-                    <option value="Surat Keluar" {{ old('tipe') == 'Surat Keluar' ? 'selected' : '' }}>Surat Keluar</option>
-                </select>
-                @error('tipe')
-                    <span class="text-red-600 text-sm">{{ $message }}</span>
-                @enderror
+                <label for="isi_template" class="block text-sm font-medium text-gray-700">Isi Template</label>
+                <textarea name="isi_template" id="isi_template" rows="6"
+                          class="mt-1 block w personally identifiable information
+                          @error('isi_template')
+                              <span class="text-red-600 text-sm">{{ $message }}</span>
+                          @enderror
             </div>
             <div class="flex justify-end space-x-2">
                 <button type="button" onclick="closeModal('createModal')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Batal</button>
@@ -97,7 +94,7 @@
 
 <!-- Modal Edit -->
 <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg p-6 w-full max-w-lg">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
         <h3 class="text-lg font-semibold mb-4">Edit Template Surat</h3>
         <form id="editForm" method="POST">
             @csrf
@@ -112,23 +109,20 @@
                 @enderror
             </div>
             <div class="mb-4">
-                <label for="edit_konten" class="block text-sm font-medium text-gray-700">Konten Template</label>
-                <textarea name="konten" id="edit_konten" rows="6"
-                          class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                          autocomplete="off" required></textarea>
-                @error('konten')
+                <label for="edit_jenis_surat" class="block text-sm font-medium text-gray-700">Jenis Surat</label>
+                <input type="text" name="jenis_surat" id="edit_jenis_surat"
+                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                       autocomplete="off" required>
+                @error('jenis_surat')
                     <span class="text-red-600 text-sm">{{ $message }}</span>
                 @enderror
             </div>
             <div class="mb-4">
-                <label for="edit_tipe" class="block text-sm font-medium text-gray-700">Tipe</label>
-                <select name="tipe" id="edit_tipe"
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        autocomplete="off" required>
-                    <option value="Surat Masuk">Surat Masuk</option>
-                    <option value="Surat Keluar">Surat Keluar</option>
-                </select>
-                @error('tipe')
+                <label for="edit_isi_template" class="block text-sm font-medium text-gray-700">Isi Template</label>
+                <textarea name="isi_template" id="edit_isi_template" rows="6"
+                          class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                          required></textarea>
+                @error('isi_template')
                     <span class="text-red-600 text-sm">{{ $message }}</span>
                 @enderror
             </div>
@@ -150,11 +144,11 @@
         document.getElementById(modalId).classList.add('hidden');
     }
 
-    function openEditModal(id, nama_template, konten, tipe) {
-        document.getElementById('editForm').action = `/admin/template-surat/${id}`;
+    function openEditModal(id, nama_template, jenis_surat, isi_template) {
+        document.getElementById('editForm').action = `/admin/templates/${id}`;
         document.getElementById('edit_nama_template').value = nama_template;
-        document.getElementById('edit_konten').value = konten;
-        document.getElementById('edit_tipe').value = tipe;
+        document.getElementById('edit_jenis_surat').value = jenis_surat;
+        document.getElementById('edit_isi_template').value = isi_template;
         openModal('editModal');
     }
 
@@ -171,12 +165,12 @@
             if (result.isConfirmed) {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = '{{ route("admin.template-surat.store") }}';
+                form.action = '{{ route("admin.templates.store") }}';
                 form.innerHTML = `
                     @csrf
                     <input type="hidden" name="nama_template" value="Copy of ${nama_template}">
-                    <input type="hidden" name="konten" value="${konten}">
-                    <input type="hidden" name="tipe" value="${tipe}">
+                    <input type="hidden" name="jenis_surat" value="${jenis_surat}">
+                    <input type="hidden" name="isi_template" value="${isi_template}">
                 `;
                 document.body.appendChild(form);
                 form.submit();
@@ -222,7 +216,7 @@
             serverSide: true,
             processing: true,
             ajax: {
-                url: '{{ route("admin.template-surat.index") }}',
+                url: '{{ route("admin.templates.index") }}',
                 error: function(xhr, error, thrown) {
                     console.log('DataTables AJAX Error:', xhr.responseText);
                     Swal.fire({
@@ -232,14 +226,11 @@
                     });
                 }
             },
-            dom: 'Bfrtip',
-            buttons: [
-                'copy', 'csv', 'excel', 'pdf'
-            ],
             columns: [
                 { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
                 { data: 'nama_template', name: 'nama_template' },
-                { data: 'tipe', name: 'tipe' },
+                { data: 'jenis_surat', name: 'jenis_surat' },
+                { data: 'user.nama', name: 'user.nama' },
                 { data: 'action', name: 'action', orderable: false, searchable: false }
             ],
             language: {

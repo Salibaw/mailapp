@@ -56,7 +56,7 @@ class SifatSuratController extends Controller
         }
 
         SifatSurat::create([
-            'nama' => $request->nama,
+            'nama_sifat' => $request->nama_sifat,
         ]);
 
         return redirect()->back()->with('success', 'Sifat surat berhasil ditambahkan.');

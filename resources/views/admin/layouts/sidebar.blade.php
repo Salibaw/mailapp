@@ -49,7 +49,7 @@
             </li>
             <!-- Template Surat -->
             <li>
-                <a href="{{ route('admin.template-surat.index') }}"
+                <a href="{{ route('admin.templates.index') }}"
                    class="flex items-center px-4 py-3 {{ request()->routeIs('admin.template-surat.*') ? 'bg-indigo-900' : 'hover:bg-indigo-700' }}">
                     <i class="fas fa-file-word mr-3"></i>
                     Template Surat

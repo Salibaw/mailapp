@@ -5,115 +5,91 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\TemplateSurat;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\Facades\DataTables;
 
 class TemplateController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the templates for DataTables.
      */
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $templateSurat = TemplateSurat::select(['id', 'nama_template', 'konten', 'tipe']);
-            return datatables()->of($templateSurat)
+            $templates = TemplateSurat::with('user')->select(['id', 'nama_template', 'jenis_surat', 'user_id']);
+
+            return DataTables::of($templates)
                 ->addIndexColumn()
-                ->addColumn('action', function ($templateSurat) {
+                ->addColumn('user.nama', function ($template) {
+                    return $template->user ? $template->user->name : '-';
+                })
+                ->addColumn('action', function ($template) {
                     return '
-                        <button onclick="openEditModal(' . $templateSurat->id . ', \'' . addslashes($templateSurat->nama_template) . '\', \'' . addslashes($templateSurat->konten) . '\', \'' . addslashes($templateSurat->tipe) . '\')"
-                                class="text-indigo-600 hover:text-indigo-800 mr-2">
+                        <button onclick="openEditModal(' . $template->id . ', \'' . addslashes($template->nama_template) . '\', \'' . addslashes($template->jenis_surat) . '\', \'' . addslashes($template->isi_template) . '\')" class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <button onclick="copyTemplate(' . $templateSurat->id . ', \'' . addslashes($templateSurat->nama_template) . '\', \'' . addslashes($templateSurat->konten) . '\', \'' . addslashes($templateSurat->tipe) . '\')"
-                                class="text-green-600 hover:text-green-800 mr-2">
-                            <i class="fas fa-copy"></i> Copy
-                        </button>
-                        <form action="' . route('admin.template-surat.destroy', $templateSurat->id) . '" method="POST" class="delete-form inline" onsubmit="return false;">
+                        <form action="' . route('admin.templates.destroy', $template->id) . '" method="POST" class="delete-form inline-block">
                             ' . csrf_field() . '
                             ' . method_field('DELETE') . '
-                            <button type="submit" class="text-red-600 hover:text-red-800">
-                                <i class="fas fa-trash"></i> Delete
+                            <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">
+                                <i class="fas fa-trash"></i> Hapus
                             </button>
                         </form>';
                 })
                 ->rawColumns(['action'])
                 ->make(true);
         }
+
         return view('admin.template');
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created template in storage.
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nama_template' => 'required|string|max:255|unique:template_surat,nama_template',
-            'konten' => 'required|string',
-            'tipe' => 'required|in:Surat Masuk,Surat Keluar',
-        ], [
-            'nama_template.required' => 'Nama template wajib diisi.',
-            'nama_template.max' => 'Nama template maksimum 255 karakter.',
-            'nama_template.unique' => 'Nama template sudah digunakan.',
-            'konten.required' => 'Konten template wajib diisi.',
-            'tipe.required' => 'Tipe template wajib dipilih.',
-            'tipe.in' => 'Tipe template tidak valid.',
+        $request->validate([
+            'nama_template' => 'required|string|max:255',
+            'jenis_surat' => 'required|string|max:255',
+            'isi_template' => 'required|string',
         ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal menambah template surat. Periksa input Anda.');
-        }
 
         TemplateSurat::create([
             'nama_template' => $request->nama_template,
-            'konten' => $request->konten,
-            'tipe' => $request->tipe,
+            'jenis_surat' => $request->jenis_surat,
+            'isi_template' => $request->isi_template,
+            'user_id' => Auth::id(),
         ]);
 
-        return redirect()->back()->with('success', 'Template surat berhasil ditambahkan.');
+        return redirect()->route('admin.templates.index')->with('success', 'Template berhasil dibuat.');
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified template in storage.
      */
-    public function update(Request $request, TemplateSurat $templateSurat)
+    public function update(Request $request, TemplateSurat $template)
     {
-        $validator = Validator::make($request->all(), [
-            'nama_template' => 'required|string|max:255|unique:template_surat,nama_template,' . $templateSurat->id,
-            'konten' => 'required|string',
-            'tipe' => 'required|in:Surat Masuk,Surat Keluar',
-        ], [
-            'nama_template.required' => 'Nama template wajib diisi.',
-            'nama_template.max' => 'Nama template maksimum 255 karakter.',
-            'nama_template.unique' => 'Nama template sudah digunakan.',
-            'konten.required' => 'Konten template wajib diisi.',
-            'tipe.required' => 'Tipe template wajib dipilih.',
-            'tipe.in' => 'Tipe template tidak valid.',
+        $request->validate([
+            'nama_template' => 'required|string|max:255',
+            'jenis_surat' => 'required|string|max:255',
+            'isi_template' => 'required|string',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal memperbarui template surat. Periksa input Anda.');
-        }
-
-        $templateSurat->update([
+        $template->update([
             'nama_template' => $request->nama_template,
-            'konten' => $request->konten,
-            'tipe' => $request->tipe,
+            'jenis_surat' => $request->jenis_surat,
+            'isi_template' => $request->isi_template,
         ]);
 
-        return redirect()->back()->with('success', 'Template surat berhasil diperbarui.');
+        return redirect()->route('admin.templates.index')->with('success', 'Template berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified template from storage.
      */
-    public function destroy(TemplateSurat $templateSurat)
+    public function destroy(TemplateSurat $template)
     {
-        try {
-            $templateSurat->delete();
-            return redirect()->back()->with('success', 'Template surat berhasil dihapus.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menghapus template surat: mungkin terkait dengan data lain.');
-        }
+        $template->delete();
+        return redirect()->route('admin.templates.index')->with('success', 'Template berhasil dihapus.');
     }
 }
