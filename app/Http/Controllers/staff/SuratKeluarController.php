@@ -13,6 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class SuratKeluarController extends Controller
@@ -73,6 +74,7 @@ class SuratKeluarController extends Controller
 
     public function store(Request $request)
     {
+        // Validate the incoming request
         $validated = $request->validate([
             'nomor_surat' => 'nullable|string|max:50',
             'template_id' => 'nullable|exists:template_surats,id',
@@ -82,9 +84,10 @@ class SuratKeluarController extends Controller
             'perihal' => 'required|string|max:255',
             'isi_surat' => 'required|string',
             'lampiran' => 'nullable|file|mimes:pdf|max:2048',
-            'action' => 'required|in:draft,submit',
+            'action' => 'required|in:draft,submit', // Added action validation
         ]);
 
+        // Prepare data for SuratKeluar
         $data = $request->only([
             'nomor_surat',
             'template_id',
@@ -93,39 +96,73 @@ class SuratKeluarController extends Controller
             'tanggal_surat',
             'perihal',
             'isi_surat',
-            'perihal',
         ]);
         $data['user_id'] = Auth::id();
-        $data['status_id'] = $request->action === 'draft'
-            ? StatusSurat::where('nama_status', 'Draf')->first()->id ?? 1
-            : StatusSurat::where('nama_status', 'Menunggu Validasi')->first()->id ?? 2;
 
+        // Set status_id based on action and sifat_surat
+        if ($request->action === 'draft') {
+            $statusDraf = StatusSurat::where('nama_status', 'Draft')->first();
+            if (!$statusDraf) {
+                return redirect()->back()->withErrors(['status' => 'Status "Draf" tidak ditemukan di database.'])->withInput();
+            }
+            $data['status_id'] = $statusDraf->id;
+        } else {
+            // For 'submit', set status based on sifat_surat
+            $sifatSurat = SifatSurat::where('id', $request->sifat_surat_id)->first();
+            if (!$sifatSurat) {
+                return redirect()->back()->withErrors(['sifat_surat' => 'Sifat surat tidak ditemukan.'])->withInput();
+            }
+
+            if ($sifatSurat->nama_sifat === 'Biasa') {
+                $statusDiterima = StatusSurat::where('nama_status', 'Diterima')->first();
+                if (!$statusDiterima) {
+                    return redirect()->back()->withErrors(['status' => 'Status "Diterima" tidak ditemukan di database.'])->withInput();
+                }
+                $data['status_id'] = $statusDiterima->id;
+            } elseif ($sifatSurat->nama_sifat === 'Penting') {
+                $statusMenunggu = StatusSurat::where('nama_status', 'Menunggu Persetujuan')->first();
+                if (!$statusMenunggu) {
+                    return redirect()->back()->withErrors(['status' => 'Status "Menunggu" tidak ditemukan di database.'])->withInput();
+                }
+                $data['status_id'] = $statusMenunggu->id;
+            } else {
+                return redirect()->back()->withErrors(['sifat_surat' => 'Sifat surat tidak valid (harus Biasa atau Penting).'])->withInput();
+            }
+        }
+
+        // Handle lampiran file upload
         if ($request->hasFile('lampiran')) {
             $data['lampiran'] = $request->file('lampiran')->store('lampiran', 'public');
         }
 
-        $suratKeluar = SuratKeluar::create($data);
-        if (!$request->is_draft) {
-            $nomorAgenda = 'AGENDA/' . now()->format('Y') . '/' . str_pad(SuratMasuk::count() + 1, 3, '0', STR_PAD_LEFT);
+        // Create SuratKeluar and SuratMasuk in a transaction
+        return DB::transaction(function () use ($request, $data) {
+            // Create SuratKeluar record
+            $suratKeluar = SuratKeluar::create($data);
 
-            SuratMasuk::create([
-                'nomor_agenda' => $nomorAgenda,
-                'nomor_surat' => $suratKeluar->nomor_surat,
-                'tanggal_surat' => $suratKeluar->tanggal_surat,
-                'tanggal_terima' => now()->toDateString(),
-                'pengirim_id' => Auth::id(),
-                'perihal' => $suratKeluar->perihal,
-                'isi_ringkas' => substr($suratKeluar->isi_surat, 0, 255),
-                'lampiran' => $suratKeluar->lampiran,
-                'user_id' => $suratKeluar->penerima_id,
-                'status_id' => $data['status_id'],
-                'sifat_surat_id' => $suratKeluar->sifat_surat_id,
-            ]);
-        }
-        return redirect()->route('staff.surat-keluar.index')
-            ->with('success', 'Surat keluar berhasil dibuat.');
+            // Create SuratMasuk record if submitted
+            if ($request->action === 'submit') {
+                $nomorAgenda = 'AGENDA/' . now()->format('Y') . '/' . str_pad(SuratMasuk::count() + 1, 3, '0', STR_PAD_LEFT);
+
+                SuratMasuk::create([
+                    'nomor_agenda' => $nomorAgenda,
+                    'nomor_surat' => $suratKeluar->nomor_surat,
+                    'tanggal_surat' => $suratKeluar->tanggal_surat,
+                    'tanggal_terima' => now()->toDateString(),
+                    'pengirim_id' => Auth::id(),
+                    'perihal' => $suratKeluar->perihal,
+                    'isi_ringkas' => substr($suratKeluar->isi_surat, 0, 255),
+                    'lampiran' => $suratKeluar->lampiran,
+                    'user_id' => $suratKeluar->penerima_id,
+                    'status_id' => $data['status_id'], // Use same status as SuratKeluar
+                    'sifat_surat_id' => $suratKeluar->sifat_surat_id,
+                ]);
+            }
+
+            return redirect()->route('staff.surat-keluar.index')
+                ->with('success', 'Surat keluar berhasil dibuat.');
+        });
     }
-
     public function update(Request $request, SuratKeluar $suratKeluar)
     {
         if ($suratKeluar->status->nama_status !== 'Draf') {
