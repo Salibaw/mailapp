@@ -18,6 +18,7 @@ use App\Http\Controllers\staff\DashboardController as StaffDashboardController;
 use App\Http\Controllers\staff\SuratMasukController as StaffSuratMasukController;
 use App\Http\Controllers\staff\SuratKeluarController as StaffSuratKeluarController;
 use App\Http\Controllers\staff\DisposisiController as StaffDisposisiController;
+use App\Http\Controllers\staff\TemplateController as StaffTemplateController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -39,7 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::prefix('admin')->middleware(['auth','role:admin'])->name('admin.')->group(function () {
+Route::prefix('admin')->middleware(['auth', 'role:admin'])->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     // CRUD untuk User
@@ -56,7 +57,10 @@ Route::prefix('admin')->middleware(['auth','role:admin'])->name('admin.')->group
 
     // CRUD untuk Template Surat    
     Route::resource('templates', TemplateController::class)->only([
-        'index', 'store', 'update', 'destroy'
+        'index',
+        'store',
+        'update',
+        'destroy'
     ]);
 });
 
@@ -69,26 +73,35 @@ Route::prefix('mahasiswa')->middleware(['auth', 'role:mahasiswa'])->name('mahasi
     Route::get('search-users', [MahasiswaSuratKeluarController::class, 'searchUsers'])->name('search-users');
 });
 
-Route::middleware(['auth', 'role:staff'])->prefix('staff')->name('staff.')->group(function () {
+Route::prefix('staff')->middleware(['auth', 'role:staff,dosen'])->name('staff.')->group(function () {
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
 
-    // CRUD Surat Masuk
     Route::resource('surat-masuk', StaffSuratMasukController::class);
+    Route::post('surat-masuk/{suratMasuk}/disposisi', [StaffSuratMasukController::class, 'storeDisposisi'])->name('surat-masuk.disposisi.store');
+    Route::post('surat-masuk/{suratMasuk}/archive', [StaffSuratMasukController::class, 'archive'])->name('surat-masuk.archive');
+    Route::get('surat-masuk/actionable', [StaffDashboardController::class, 'actionable'])->name('surat-masuk.actionable');
 
-    // CRUD Surat Keluar (verifikasi, penomoran, persetujuan)
     Route::resource('surat-keluar', StaffSuratKeluarController::class);
-    Route::get('surat-keluar/{surat_keluar}/setujui', [StaffSuratKeluarController::class, 'showSetujuiForm'])->name('surat-keluar.setujui.form');
-    Route::post('surat-keluar/{surat_keluar}/setujui', [StaffSuratKeluarController::class, 'setujui'])->name('surat-keluar.setujui');
-    Route::get('surat-keluar/{surat_keluar}/tolak', [StaffSuratKeluarController::class, 'showTolakForm'])->name('surat-keluar.tolak.form');
-    Route::post('surat-keluar/{surat_keluar}/tolak', [StaffSuratKeluarController::class, 'tolak'])->name('surat-keluar.tolak');
-    Route::get('surat-keluar/{surat_keluar}/generate-pdf', [StaffSuratKeluarController::class, 'generatePdf'])->name('surat-keluar.generate-pdf');
+    Route::post('surat-keluar/{suratKeluar}/validate', [StaffSuratKeluarController::class, 'validateSurat'])->name('surat-keluar.validate');
+    Route::post('surat-keluar/{suratKeluar}/number', [StaffSuratKeluarController::class, 'assignNumber'])->name('surat-keluar.number');
+    Route::post('surat-keluar/{suratKeluar}/forward', [StaffSuratKeluarController::class, 'forwardForApproval'])->name('surat-keluar.forward');
+    Route::get('surat-keluar/{suratKeluar}/download', [StaffSuratKeluarController::class, 'download'])->name('surat-keluar.download');
+    Route::get('search-users', [StaffSuratKeluarController::class, 'searchUsers'])->name('search-users');
+    Route::resource('template-surat', StaffTemplateController::class)->only(['index']);
+    Route::get('templates/{templateSurat}', [StaffTemplateController::class, 'show'])->name('template-surat.show');
 
+    Route::resource('templates', StaffTemplateController::class)->only([
+        'index',
+        'store',
+        'update',
+        'destroy',
+    ]);
 
-    // Disposisi Surat Masuk
-    Route::get('disposisi/{surat_masuk}', [StaffDisposisiController::class, 'create'])->name('disposisi.create');
-    Route::post('disposisi/{surat_masuk}', [StaffDisposisiController::class, 'store'])->name('disposisi.store');
-    Route::get('disposisi-list', [StaffDisposisiController::class, 'index'])->name('disposisi.index'); // Melihat semua disposisi yang pernah dibuat
-    Route::get('disposisi-masuk', [StaffDisposisiController::class, 'disposisiMasuk'])->name('disposisi.masuk'); // Disposisi yang diterima Staff TU
+    Route::resource('disposisi', StaffDisposisiController::class)->only(['index']);
+    Route::post('disposisi/{disposisi}/forward', [StaffDisposisiController::class, 'forward'])->name('disposisi.forward');
+    Route::post('disposisi/{disposisi}/complete', [StaffDisposisiController::class, 'complete'])->name('disposisi.complete');
 
+    Route::get('search-users', [StaffDisposisiController::class, 'searchUsers'])->name('search-users');
+    Route::get('search-users', [StaffSuratMasukController::class, 'searchUsers'])->name('search-users');
 });
 require __DIR__ . '/auth.php';

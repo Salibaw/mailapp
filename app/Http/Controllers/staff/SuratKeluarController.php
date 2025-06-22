@@ -1,156 +1,234 @@
 <?php
 
-namespace App\Http\Controllers\staff;
+namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
-use App\Models\SuratKeluar;
-use App\Models\StatusSurat;
 use App\Models\SifatSurat;
-use App\Models\PersetujuanSuratKeluar; // Import
+use App\Models\StatusSurat;
+use App\Models\SuratKeluar;
+use App\Models\TemplateSurat;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use PDF; // Pastikan Anda sudah menginstal dan mengkonfigurasi DomPDF/Snappy
-use Illuminate\Support\Carbon; // Untuk tanggal
-use Illuminate\Support\Str; // Untuk slugify nama surat
+use Illuminate\Support\Facades\Storage;
+use Yajra\DataTables\Facades\DataTables;
 
 class SuratKeluarController extends Controller
 {
-    /**
-     * Display a listing of the resource (Surat Keluar yang diajukan oleh pengguna lain).
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $suratKeluar = SuratKeluar::with(['user.userType', 'status', 'sifat'])
-                                ->latest()
-                                ->paginate(10);
-        return view('staff_tu.surat_keluar.index', compact('suratKeluar'));
-    }
+        if ($request->ajax()) {
+            $query = SuratKeluar::with(['status', 'sifat', 'penerima', 'user'])
+                ->select([
+                    'id', 'nomor_surat', 'tanggal_surat', 'perihal', 'penerima_id',
+                    'status_id', 'sifat_surat_id', 'isi_surat', 'lampiran',
+                    'template_surat_id', 'user_id', 'perihal'
+                ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(SuratKeluar $suratKeluar)
-    {
-        $suratKeluar->load(['user.userType', 'status', 'sifat', 'templateSurat', 'persetujuan.penyetuju']);
-        return view('staff_tu.surat_keluar.show', compact('suratKeluar'));
-    }
+            if ($request->status_id) {
+                $query->where('status_id', $request->status_id);
+            }
 
-    /**
-     * Show the form to set a letter for approval (optional: used by Staff TU).
-     * This method might be integrated into the 'show' view or a dedicated form.
-     */
-    public function showSetujuiForm(SuratKeluar $suratKeluar)
-    {
-        // Pastikan hanya surat yang 'Menunggu Persetujuan' atau 'Ditolak' yang bisa diproses
-        if (!in_array($suratKeluar->status->nama_status, ['Menunggu Persetujuan', 'Ditolak'])) {
-            return redirect()->route('staff_tu.surat-keluar.show', $suratKeluar->id)->with('error', 'Surat ini tidak bisa langsung disetujui melalui form ini.');
+            if ($request->role) {
+                $query->whereHas('user', function ($q) use ($request) {
+                    $q->where('role', $request->role);
+                });
+            }
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->editColumn('tanggal_surat', function ($suratKeluar) {
+                    return $suratKeluar->tanggal_surat->format('d-m-Y');
+                })
+                ->addColumn('tanggal_surat_raw', function ($suratKeluar) {
+                    return $suratKeluar->tanggal_surat->format('Y-m-d');
+                })
+                ->addColumn('penerima_id', function ($suratKeluar) {
+                    return $suratKeluar->penerima_id;
+                })
+                ->addColumn('template_surat_id', function ($suratKeluar) {
+                    return $suratKeluar->template_surat_id;
+                })
+                ->make(true);
         }
 
-        // Contoh: Form untuk staf TU mengisi nomor surat, tanggal surat sebelum diteruskan ke pimpinan
-        return view('staff_tu.surat_keluar.form_setujui', compact('suratKeluar'));
+        $statusSurat = StatusSurat::all();
+        $sifatSurat = SifatSurat::all();
+        $templates = TemplateSurat::select('id', 'nama_template')->get();
+        return view('staff.suratkeluar', compact('statusSurat', 'sifatSurat', 'templates'));
     }
 
-    /**
-     * Staff TU to process the letter for approval (add number, date).
-     * This is the action where Staff TU "prepares" the letter.
-     */
-    public function setujui(Request $request, SuratKeluar $suratKeluar)
+    public function store(Request $request)
     {
-        $request->validate([
-            'nomor_surat' => 'required|string|unique:surat_keluar,nomor_surat,' . $suratKeluar->id,
+        $allowedRoles = ['staff', 'mahasiswa', 'dosen'];
+        if (!in_array(Auth::user()->role, $allowedRoles)) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk membuat surat.')->withInput();
+        }
+
+        $validated = $request->validate([
+            'template_id' => 'nullable|exists:template_surats,id',
+            'penerima_id' => 'required|exists:users,id',
+            'sifat_surat_id' => 'required|exists:sifat_surats,id',
             'tanggal_surat' => 'required|date',
+            'perihal' => 'required|string|max:255',
+            'isi_surat' => 'required|string',
+            'perihal' => 'nullable|string',
+            'lampiran' => 'nullable|file|mimes:pdf|max:2048',
+            'action' => 'required|in:draft,submit',
         ]);
 
-        // Dapatkan status 'Disetujui' atau 'Menunggu Persetujuan' jika belum ada
-        $statusDisetujui = StatusSurat::where('nama_status', 'Disetujui')->firstOrFail();
-        $statusMenungguPersetujuan = StatusSurat::where('nama_status', 'Menunggu Persetujuan')->firstOrFail();
+        $data = $request->only([
+            'template_id', 'penerima_id', 'sifat_surat_id',
+            'tanggal_surat', 'perihal', 'isi_surat', 'perihal',
+        ]);
+        $data['user_id'] = Auth::id();
+        $data['status_id'] = $request->action === 'draft'
+            ? StatusSurat::where('nama_status', 'Draf')->first()->id ?? 1
+            : StatusSurat::where('nama_status', 'Menunggu Validasi')->first()->id ?? 2;
 
+        if ($request->hasFile('lampiran')) {
+            $data['lampiran'] = $request->file('lampiran')->store('lampiran', 'public');
+        }
+
+        SuratKeluar::create($data);
+
+        return redirect()->route('staff.surat-keluar.index')
+            ->with('success', 'Surat keluar berhasil dibuat.');
+    }
+
+    public function update(Request $request, SuratKeluar $suratKeluar)
+    {
+        if ($suratKeluar->status->nama_status !== 'Draf') {
+            return redirect()->back()->with('error', 'Hanya surat dengan status Draf yang dapat diedit.')->withInput();
+        }
+
+        $validated = $request->validate([
+            'template_id' => 'nullable|exists:template_surats,id',
+            'penerima_id' => 'required|exists:users,id',
+            'sifat_surat_id' => 'required|exists:sifat_surats,id',
+            'tanggal_surat' => 'required|date',
+            'perihal' => 'required|string|max:255',
+            'isi_surat' => 'required|string',
+            'perihal' => 'nullable|string',
+            'lampiran' => 'nullable|file|mimes:pdf|max:2048',
+            'action' => 'required|in:draft,submit',
+        ]);
+
+        $data = $request->only([
+            'template_id', 'penerima_id', 'sifat_surat_id',
+            'tanggal_surat', 'perihal', 'isi_surat', 'perihal',
+        ]);
+        $data['status_id'] = $request->action === 'draft'
+            ? StatusSurat::where('nama_status', 'Draf')->first()->id ?? 1
+            : StatusSurat::where('nama_status', 'Menunggu Validasi')->first()->id ?? 2;
+
+        if ($request->hasFile('lampiran')) {
+            if ($suratKeluar->lampiran) {
+                Storage::disk('public')->delete($suratKeluar->lampiran);
+            }
+            $data['lampiran'] = $request->file('lampiran')->store('lampiran', 'public');
+        }
+
+        $suratKeluar->update($data);
+
+        return redirect()->route('staff.surat-keluar.index')
+            ->with('success', 'Surat keluar berhasil diperbarui.');
+    }
+
+    public function destroy(SuratKeluar $suratKeluar)
+    {
+        if ($suratKeluar->status->nama_status !== 'Draf') {
+            return response()->json(['success' => false, 'message' => 'Hanya surat dengan status Draf yang dapat dihapus.'], 403);
+        }
+
+        if ($suratKeluar->lampiran) {
+            Storage::disk('public')->delete($suratKeluar->lampiran);
+        }
+        $suratKeluar->delete();
+
+        return response()->json(['success' => true, 'message' => 'Surat keluar berhasil dihapus.']);
+    }
+
+    public function validateSurat(Request $request, SuratKeluar $suratKeluar)
+    {
+        if ($suratKeluar->status->nama_status !== 'Menunggu Validasi') {
+            return redirect()->back()->with('error', 'Hanya surat dengan status Menunggu Validasi yang dapat divalidasi.')->withInput();
+        }
+
+        $validated = $request->validate([
+            'nomor_surat' => 'required|string|max:50',
+            'status' => 'required|in:Disetujui,Ditolak',
+            'perihal' => 'nullable|string',
+        ]);
+
+        $statusId = StatusSurat::where('nama_status', $request->status)->first()->id ?? ($request->status === 'Disetujui' ? 3 : 4);
 
         $suratKeluar->update([
             'nomor_surat' => $request->nomor_surat,
-            'tanggal_surat' => $request->tanggal_surat,
-            'status_id' => $statusMenungguPersetujuan->id, // Setelah diisi nomor, status tetap menunggu persetujuan Pimpinan
+            'status_id' => $statusId,
+            'perihal' => $request->perihal,
         ]);
 
-        // Catat sebagai persetujuan oleh staf TU (atau ini bisa diabaikan jika hanya pimpinan yang menyetujui final)
-        // PersetujuanSuratKeluar::create([
-        //     'surat_keluar_id' => $suratKeluar->id,
-        //     'user_id_penyetuju' => Auth::id(), // ID Staf TU
-        //     'status_persetujuan' => 'Diteruskan ke Pimpinan',
-        //     'catatan' => 'Surat telah diberi nomor dan siap untuk persetujuan pimpinan.',
-        //     'tanggal_persetujuan' => Carbon::now(),
-        // ]);
-
-        return redirect()->route('staff_tu.surat-keluar.index')->with('success', 'Surat berhasil diberi nomor dan diteruskan untuk persetujuan pimpinan.');
+        return redirect()->route('staff.surat-keluar.index')
+            ->with('success', 'Surat keluar berhasil divalidasi.');
     }
 
-    /**
-     * Show the form to reject a letter.
-     */
-    public function showTolakForm(SuratKeluar $suratKeluar)
+    public function assignNumber(Request $request, SuratKeluar $suratKeluar)
     {
-        if (!in_array($suratKeluar->status->nama_status, ['Menunggu Persetujuan', 'Disetujui'])) {
-            return redirect()->route('staff_tu.surat-keluar.show', $suratKeluar->id)->with('error', 'Surat ini tidak bisa ditolak.');
+        if ($suratKeluar->status->nama_status !== 'Menunggu Validasi') {
+            return redirect()->back()->with('error', 'Hanya surat dengan status Menunggu Validasi yang dapat diberi nomor.')->withInput();
         }
-        return view('staff_tu.surat_keluar.form_tolak', compact('suratKeluar'));
-    }
 
-    /**
-     * Staff TU to reject the letter.
-     */
-    public function tolak(Request $request, SuratKeluar $suratKeluar)
-    {
-        $request->validate([
-            'catatan_penolakan' => 'required|string|min:10',
+        $validated = $request->validate([
+            'nomor_surat' => 'required|string|max:50',
         ]);
-
-        $statusDitolak = StatusSurat::where('nama_status', 'Ditolak')->firstOrFail();
 
         $suratKeluar->update([
-            'status_id' => $statusDitolak->id,
-            'nomor_surat' => null, // Reset nomor surat jika ditolak
-            'tanggal_surat' => null, // Reset tanggal surat jika ditolak
+            'nomor_surat' => $request->nomor_surat,
         ]);
 
-        // Catat penolakan
-        PersetujuanSuratKeluar::create([
-            'surat_keluar_id' => $suratKeluar->id,
-            'user_id_penyetuju' => Auth::id(), // ID Staf TU yang menolak
-            'status_persetujuan' => 'Ditolak',
-            'catatan' => $request->catatan_penolakan,
-            'tanggal_persetujuan' => Carbon::now(),
-        ]);
-
-        return redirect()->route('staff_tu.surat-keluar.index')->with('success', 'Surat berhasil ditolak.');
+        return redirect()->route('staff.surat-keluar.index')
+            ->with('success', 'Nomor surat berhasil diberikan.');
     }
 
-    /**
-     * Generate PDF for a surat keluar (after approval).
-     */
-    public function generatePdf(SuratKeluar $suratKeluar)
+    public function forwardForApproval(SuratKeluar $suratKeluar)
     {
-        // Pastikan surat sudah disetujui dan memiliki nomor/tanggal
-        if ($suratKeluar->status->nama_status !== 'Disetujui' || !$suratKeluar->nomor_surat) {
-            return redirect()->back()->with('error', 'Surat belum disetujui atau belum memiliki nomor surat.');
+        if ($suratKeluar->status->nama_status !== 'Draf') {
+            return response()->json(['success' => false, 'message' => 'Hanya surat dengan status Draf yang dapat dikirim untuk persetujuan.'], 403);
         }
 
-        $data = [
-            'surat' => $suratKeluar,
-            // Tambahkan data lain yang mungkin dibutuhkan di template PDF
-            'kampus_nama' => 'Nama Kampus Anda', // Konfigurasi ini
-            'kampus_alamat' => 'Alamat Kampus Anda', // Konfigurasi ini
-        ];
+        $suratKeluar->update([
+            'status_id' => StatusSurat::where('nama_status', 'Menunggu Validasi')->first()->id ?? 2,
+        ]);
 
-        // Load view yang akan dijadikan PDF
-        $pdf = PDF::loadView('pdf.surat_keluar', $data);
+        // Optional: Notify pimpinan
+        // \App\Models\User::where('role', 'pimpinan')->each(function ($pimpinan) {
+        //     $pimpinan->notify(new \App\Notifications\SuratKeluarApproval($suratKeluar));
+        // });
 
-        // Unduh PDF
-        return $pdf->download('surat_keluar_' . Str::slug($suratKeluar->perihal) . '.pdf');
+        return response()->json(['success' => true, 'message' => 'Surat keluar berhasil dikirim untuk validasi.']);
     }
 
-    // Tidak perlu implementasi create, store, edit, update, destroy di sini
-    // karena pembuatan surat diajukan oleh mahasiswa/dosen, bukan staf TU.
-    // Staf TU hanya memprosesnya.
-    // Jika Staf TU juga bisa membuat surat dari awal, maka metode ini perlu diimplementasi.
-    // Untuk saat ini, asumsikan Staf TU hanya memproses pengajuan.
+    public function download(SuratKeluar $suratKeluar)
+    {
+        if ($suratKeluar->status->nama_status !== 'Disetujui') {
+            return redirect()->route('staff.surat-keluar.index')->with('error', 'Hanya surat dengan status Disetujui yang dapat diunduh.');
+        }
+
+        $pdf = Pdf::loadView('staff.suratkeluar.pdf', compact('suratKeluar'));
+        return $pdf->download('surat-keluar-' . ($suratKeluar->nomor_surat ?? 'document') . '.pdf');
+    }
+
+    public function searchUsers(Request $request)
+    {
+        $search = $request->query('search', '');
+        $users = User::where('nama', 'like', '%' . $search . '%')
+            ->orWhere('nip_nim', 'like', '%' . $search . '%')
+            ->select('id', 'nama', 'nip_nim')
+            ->limit(10)
+            ->get();
+
+        return response()->json($users);
+    }
 }

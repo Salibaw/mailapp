@@ -1,87 +1,106 @@
 <?php
 
-namespace App\Http\Controllers\staff;
+namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Disposisi;
 use App\Models\SuratMasuk;
 use App\Models\User;
-use App\Models\StatusSurat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
+use Yajra\DataTables\Facades\DataTables;
 
 class DisposisiController extends Controller
 {
-    /**
-     * Display a listing of dispositions created by this Staff TU.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $userId = Auth::id();
-        $disposisiDibuat = Disposisi::where('dari_user_id', $userId)
-                                    ->with(['suratMasuk', 'keUser'])
-                                    ->latest()
-                                    ->paginate(10);
-        return view('staff_tu.disposisi.index', compact('disposisiDibuat'));
-    }
+        if ($request->ajax()) {
+            $query = Disposisi::with(['surat_masuk', 'pengirim', 'penerima'])
+                ->where('ke_user_id', Auth::id())
+                ->select([
+                    'id',
+                    'surat_masuk_id',
+                    'dari_user_id',
+                    'ke_user_id',
+                    'instruksi',
+                    'status_disposisi',
+                    'instruksi',
+                ]);
 
-    /**
-     * Display a listing of dispositions received by this Staff TU.
-     */
-    public function disposisiMasuk()
-    {
-        $userId = Auth::id();
-        $disposisiDiterima = Disposisi::where('ke_user_id', $userId)
-                                     ->with(['suratMasuk', 'dariUser'])
-                                     ->latest()
-                                     ->paginate(10);
-        return view('staff_tu.disposisi.masuk', compact('disposisiDiterima'));
-    }
+            if ($request->status_disposisi) {
+                $query->where('status_disposisi', $request->status_disposisi);
+            }
 
-
-    /**
-     * Show the form for creating a new disposition for a specific incoming letter.
-     */
-    public function create(SuratMasuk $suratMasuk)
-    {
-        // Pastikan surat masuk belum pernah didisposisi atau statusnya memungkinkan
-        if ($suratMasuk->status->nama_status === 'Selesai') {
-             return redirect()->route('staff_tu.surat-masuk.show', $suratMasuk->id)->with('error', 'Surat ini sudah selesai dan tidak dapat didisposisi lagi.');
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->editColumn('surat_masuk.tanggal_surat', function ($disposisi) {
+                    return $disposisi->surat_masuk->tanggal_surat->format('d-m-Y');
+                })
+                ->make(true);
         }
 
-        $users = User::whereHas('userType', function($query) {
-                        $query->whereIn('nama_tipe', ['Pimpinan', 'Dosen', 'Staf TU']); // Bisa didisposisi ke Pimpinan, Dosen, atau Staff TU lain
-                    })->where('id', '!=', Auth::id()) // Jangan disposisi ke diri sendiri
-                    ->get();
-        return view('staff_tu.disposisi.create', compact('suratMasuk', 'users'));
+        return view('staff.disposisi');
     }
 
-    /**
-     * Store a newly created disposition in storage.
-     */
-    public function store(Request $request, SuratMasuk $suratMasuk)
+    public function forward(Request $request, Disposisi $disposisi)
     {
-        $request->validate([
+        if ($disposisi->status_disposisi !== 'Pending') {
+            return redirect()->route('staff.disposisi.index')->with('error', 'Hanya disposisi dengan status Pending yang dapat diforward.');
+        }
+
+        $validator = Validator::make($request->all(), [
             'ke_user_id' => 'required|exists:users,id',
-            'instruksi' => 'nullable|string',
-            'status_disposisi' => 'required|string|in:Diteruskan,Diterima,Selesai', // Atau sesuaikan opsi
+            'instruksi' => 'required|string',
         ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
         Disposisi::create([
-            'surat_masuk_id' => $suratMasuk->id,
-            'dari_user_id' => Auth::id(), // Staff TU yang membuat disposisi
+            'surat_masuk_id' => $disposisi->surat_masuk_id,
+            'dari_user_id' => Auth::id(),
             'ke_user_id' => $request->ke_user_id,
             'instruksi' => $request->instruksi,
-            'tanggal_disposisi' => Carbon::now(),
-            'status_disposisi' => $request->status_disposisi,
+            'status_disposisi' => 'Pending',
         ]);
 
-        // Update status surat masuk menjadi 'Didisposisi'
-        $statusDidisposisi = StatusSurat::where('nama_status', 'Didisposisi')->firstOrFail();
-        $suratMasuk->update(['status_id' => $statusDidisposisi->id]);
+        return redirect()->route('staff.disposisi.index')->with('success', 'Disposisi berhasil diforward.');
+    }
 
+    public function complete(Request $request, Disposisi $disposisi)
+    {
+        if ($disposisi->status_disposisi !== 'Pending') {
+            return redirect()->route('staff.disposisi.index')->with('error', 'Hanya disposisi dengan status_disposisi Pending yang dapat ditandai selesai.');
+        }
 
-        return redirect()->route('staff_tu.surat-masuk.show', $suratMasuk->id)->with('success', 'Disposisi berhasil dibuat.');
+        $validator = Validator::make($request->all(), [
+            'instruksi' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        $disposisi->update([
+            'status_disposisi' => 'Selesai',
+            'instruksi' => $request->instruksi,
+        ]);
+
+        return redirect()->route('staff.disposisi.index')->with('success', 'Disposisi berhasil ditandai selesai.');
+    }
+
+    public function searchUsers(Request $request)
+    {
+        $search = $request->input('search', '');
+
+        $users = User::where('nama', 'LIKE', '%' . $search . '%')
+            ->orWhere('email', 'LIKE', '%' . $search . '%')
+            ->select('id', 'nama', 'email', 'nip_nim')
+            ->take(10)
+            ->get();
+
+        return response()->json($users);
     }
 }
