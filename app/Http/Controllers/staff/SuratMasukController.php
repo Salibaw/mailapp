@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SifatSurat;
 use App\Models\StatusSurat;
 use App\Models\SuratMasuk;
+use App\Models\Disposisi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +32,8 @@ class SuratMasukController extends Controller
                     'sifat_surat_id',
                     'isi_ringkas',
                     'lampiran'
-                ]);
+                ])
+                ->where('user_id', Auth::id());;
 
             if ($request->status_id) {
                 $query->where('status_id', $request->status_id);
@@ -177,7 +179,7 @@ class SuratMasukController extends Controller
         return redirect()->route('staff.surat-masuk.index')->with('success', 'Surat masuk berhasil diarsipkan.');
     }
 
-     public function searchUsers(Request $request)
+    public function searchUsers(Request $request)
     {
         $search = $request->input('search', '');
 
@@ -188,5 +190,39 @@ class SuratMasukController extends Controller
             ->get();
 
         return response()->json($users);
+    }
+    public function storeDisposisi(Request $request, SuratMasuk $suratMasuk)
+    {
+        $validator = Validator::make($request->all(), [
+            'ke_user_id' => 'required|exists:users,id',
+            'instruksi' => 'nullable|string',
+
+        ]);
+        // dd($suratMasuk->pengirim_id);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        Disposisi::create([
+            // ''
+            'surat_masuk_id' => $suratMasuk->id,
+            'ke_user_id' => $request->ke_user_id,
+            'instruksi' => $request->instruksi,
+            'dari_user_id' =>  $suratMasuk->pengirim_id,
+        ]);
+
+        // Optionally update the status of the SuratMasuk
+        $suratMasuk->update([
+            'status_id' => StatusSurat::where('nama_status', 'Didisposisi')->first()->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Disposisi berhasil dikirim.',
+        ]);
     }
 }

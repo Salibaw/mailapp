@@ -94,6 +94,10 @@
             @endif
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
+                    <label for="nomor_surat" class="block text-sm font-medium text-gray-700">Nomor Surat (Opsional)</label>
+                    <input type="text" id="nomor_surat" name="nomor_surat" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Nomor Surat (Opsional)">
+                </div>
+                <div>
                     <label for="template_id" class="block text-sm font-medium text-gray-700">Template Surat</label>
                     <select id="template_id" name="template_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         <option value="">Pilih Template (Opsional)</option>
@@ -454,7 +458,7 @@
                     return {
                         results: data.map(user => ({
                             id: user.id,
-                            text: `${user.nama} (${user.nip_nim})`
+                            text: `${user.nama} (${user.email})`
                         }))
                     };
                 },

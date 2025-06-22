@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SifatSurat;
 use App\Models\StatusSurat;
 use App\Models\SuratKeluar;
+use App\Models\SuratMasuk;
 use App\Models\TemplateSurat;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -21,10 +22,21 @@ class SuratKeluarController extends Controller
         if ($request->ajax()) {
             $query = SuratKeluar::with(['status', 'sifat', 'penerima', 'user'])
                 ->select([
-                    'id', 'nomor_surat', 'tanggal_surat', 'perihal', 'penerima_id',
-                    'status_id', 'sifat_surat_id', 'isi_surat', 'lampiran',
-                    'template_surat_id', 'user_id', 'perihal'
-                ]);
+                    'id',
+                    'nomor_surat',
+                    'tanggal_surat',
+                    'perihal',
+                    'penerima_id',
+                    'status_id',
+                    'sifat_surat_id',
+                    'isi_surat',
+                    'lampiran',
+                    'template_surat_id',
+                    'user_id',
+                    'perihal'
+                ])
+                ->where('user_id', Auth::id());
+
 
             if ($request->status_id) {
                 $query->where('status_id', $request->status_id);
@@ -61,26 +73,27 @@ class SuratKeluarController extends Controller
 
     public function store(Request $request)
     {
-        $allowedRoles = ['staff', 'mahasiswa', 'dosen'];
-        if (!in_array(Auth::user()->role, $allowedRoles)) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki izin untuk membuat surat.')->withInput();
-        }
-
         $validated = $request->validate([
+            'nomor_surat' => 'nullable|string|max:50',
             'template_id' => 'nullable|exists:template_surats,id',
             'penerima_id' => 'required|exists:users,id',
             'sifat_surat_id' => 'required|exists:sifat_surats,id',
             'tanggal_surat' => 'required|date',
             'perihal' => 'required|string|max:255',
             'isi_surat' => 'required|string',
-            'perihal' => 'nullable|string',
             'lampiran' => 'nullable|file|mimes:pdf|max:2048',
             'action' => 'required|in:draft,submit',
         ]);
 
         $data = $request->only([
-            'template_id', 'penerima_id', 'sifat_surat_id',
-            'tanggal_surat', 'perihal', 'isi_surat', 'perihal',
+            'nomor_surat',
+            'template_id',
+            'penerima_id',
+            'sifat_surat_id',
+            'tanggal_surat',
+            'perihal',
+            'isi_surat',
+            'perihal',
         ]);
         $data['user_id'] = Auth::id();
         $data['status_id'] = $request->action === 'draft'
@@ -91,8 +104,24 @@ class SuratKeluarController extends Controller
             $data['lampiran'] = $request->file('lampiran')->store('lampiran', 'public');
         }
 
-        SuratKeluar::create($data);
+        $suratKeluar = SuratKeluar::create($data);
+        if (!$request->is_draft) {
+            $nomorAgenda = 'AGENDA/' . now()->format('Y') . '/' . str_pad(SuratMasuk::count() + 1, 3, '0', STR_PAD_LEFT);
 
+            SuratMasuk::create([
+                'nomor_agenda' => $nomorAgenda,
+                'nomor_surat' => $suratKeluar->nomor_surat,
+                'tanggal_surat' => $suratKeluar->tanggal_surat,
+                'tanggal_terima' => now()->toDateString(),
+                'pengirim_id' => Auth::id(),
+                'perihal' => $suratKeluar->perihal,
+                'isi_ringkas' => substr($suratKeluar->isi_surat, 0, 255),
+                'lampiran' => $suratKeluar->lampiran,
+                'user_id' => $suratKeluar->penerima_id,
+                'status_id' => $data['status_id'],
+                'sifat_surat_id' => $suratKeluar->sifat_surat_id,
+            ]);
+        }
         return redirect()->route('staff.surat-keluar.index')
             ->with('success', 'Surat keluar berhasil dibuat.');
     }
@@ -116,8 +145,13 @@ class SuratKeluarController extends Controller
         ]);
 
         $data = $request->only([
-            'template_id', 'penerima_id', 'sifat_surat_id',
-            'tanggal_surat', 'perihal', 'isi_surat', 'perihal',
+            'template_id',
+            'penerima_id',
+            'sifat_surat_id',
+            'tanggal_surat',
+            'perihal',
+            'isi_surat',
+            'perihal',
         ]);
         $data['status_id'] = $request->action === 'draft'
             ? StatusSurat::where('nama_status', 'Draf')->first()->id ?? 1
@@ -225,7 +259,7 @@ class SuratKeluarController extends Controller
         $search = $request->query('search', '');
         $users = User::where('nama', 'like', '%' . $search . '%')
             ->orWhere('nip_nim', 'like', '%' . $search . '%')
-            ->select('id', 'nama', 'nip_nim')
+            ->select('id', 'nama', 'email', 'nip_nim')
             ->limit(10)
             ->get();
 

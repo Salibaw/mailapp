@@ -248,9 +248,9 @@
                 { data: 'surat_masuk.nomor_surat', name: 'surat_masuk.nomor_surat' },
                 { data: 'surat_masuk.tanggal_surat', name: 'surat_masuk.tanggal_surat' },
                 { data: 'surat_masuk.perihal', name: 'surat_masuk.perihal' },
-                { data: 'pengirim.nama', name: 'pengirim.nama' },
+                { data: 'dari_user', name: 'dariUser.nama' },
                 { data: 'instruksi', name: 'instruksi' },
-                { data: 'status', name: 'status' },
+                { data: 'status_disposisi', name: 'status_disposisi' },
                 {
                     data: null,
                     name: 'action',

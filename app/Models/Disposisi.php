@@ -27,7 +27,7 @@ class Disposisi extends Model
     /**
      * Get the incoming letter that this disposition belongs to.
      */
-    public function suratMasuk(): BelongsTo
+    public function surat_masuk(): BelongsTo
     {
         return $this->belongsTo(SuratMasuk::class);
     }

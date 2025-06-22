@@ -18,7 +18,7 @@
         <div class="w-64 bg-indigo-800 text-white fixed h-full">
             <div class="p-4">
                 <h1 class="text-2xl font-bold">Dashboard Staff</h1>
-                <p class="text-sm mt-2">Selamat datang, {{ auth()->user()->name }}</p>
+                <p class="text-sm mt-2">Selamat datang, {{ auth()->user()->nama }}</p>
             </div>
             <nav class="mt-4">
                 <ul>

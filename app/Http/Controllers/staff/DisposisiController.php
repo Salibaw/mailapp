@@ -16,7 +16,7 @@ class DisposisiController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Disposisi::with(['surat_masuk', 'pengirim', 'penerima'])
+            $query = Disposisi::with(['surat_masuk', 'dariUser', 'keUser'])
                 ->where('ke_user_id', Auth::id())
                 ->select([
                     'id',
@@ -25,7 +25,7 @@ class DisposisiController extends Controller
                     'ke_user_id',
                     'instruksi',
                     'status_disposisi',
-                    'instruksi',
+                    // 'instruksi',
                 ]);
 
             if ($request->status_disposisi) {
@@ -34,6 +34,10 @@ class DisposisiController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->addColumn('dari_user', function ($disposisi) {
+                    return $disposisi->dariUser ? $disposisi->dariUser->nama : '-';
+                })
+
                 ->editColumn('surat_masuk.tanggal_surat', function ($disposisi) {
                     return $disposisi->surat_masuk->tanggal_surat->format('d-m-Y');
                 })

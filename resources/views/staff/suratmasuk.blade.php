@@ -90,10 +90,13 @@
                     <input type="date" id="tanggal_terima" name="tanggal_terima" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                 </div>
                 <div>
-                    <label for="pengirim_id" class="block text-sm font-medium text-gray-700">Pengirim</label>
-                    <select id="pengirim_id" name="pengirim_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                        <option value="">Pilih Pengirim</option>
+                    <label for="pengirim_id" class="block text-sm font-medium text-gray-700">pengirim</label>
+                    <select name="pengirim_id" id="pengirim_id" class="select2-pengirim mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required>
+                        <option value="">Pilih Penerima</option>
                     </select>
+                    @error('penerima_id')
+                    <span class="text-red-600 text-sm">{{ $message }}</span>
+                    @enderror
                 </div>
                 <div>
                     <label for="sifat_surat_id" class="block text-sm font-medium text-gray-700">Sifat Surat</label>
@@ -126,56 +129,95 @@
 </div>
 
 <!-- Edit Modal -->
+<!-- Edit Modal -->
 <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden" onclick="closeModalOnOutsideClick(event, 'editModal')">
     <div class="bg-white rounded-lg p-6 max-w-2xl w-full" onclick="event.stopPropagation()">
         <h3 class="text-lg font-semibold mb-4">Edit Surat Masuk</h3>
         <form id="editForm" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
+            <!-- Error Messages -->
+            @if ($errors->any())
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                     <label for="edit_nomor_agenda" class="block text-sm font-medium text-gray-700">Nomor Agenda</label>
-                    <input type="text" id="edit_nomor_agenda" name="nomor_agenda" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <input type="text" id="edit_nomor_agenda" name="nomor_agenda" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm @error('nomor_agenda') border-red-500 @enderror">
+                    @error('nomor_agenda')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
                     <label for="edit_nomor_surat" class="block text-sm font-medium text-gray-700">Nomor Surat</label>
-                    <input type="text" id="edit_nomor_surat" name="nomor_surat" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <input type="text" id="edit_nomor_surat" name="nomor_surat" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm @error('nomor_surat') border-red-500 @enderror">
+                    @error('nomor_surat')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
+                <!-- Add similar error handling for other fields -->
                 <div>
                     <label for="edit_tanggal_surat" class="block text-sm font-medium text-gray-700">Tanggal Surat</label>
-                    <input type="date" id="edit_tanggal_surat" name="tanggal_surat" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <input type="date" id="edit_tanggal_surat" name="tanggal_surat" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm @error('tanggal_surat') border-red-500 @enderror">
+                    @error('tanggal_surat')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
                     <label for="edit_tanggal_terima" class="block text-sm font-medium text-gray-700">Tanggal Terima</label>
-                    <input type="date" id="edit_tanggal_terima" name="tanggal_terima" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <input type="date" id="edit_tanggal_terima" name="tanggal_terima" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm @error('tanggal_terima') border-red-500 @enderror">
+                    @error('tanggal_terima')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
                     <label for="edit_pengirim_id" class="block text-sm font-medium text-gray-700">Pengirim</label>
-                    <select id="edit_pengirim_id" name="pengirim_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <select id="edit_pengirim_id" name="pengirim_id" class="select2-pengirim mt-1 block w-full border-gray-300 rounded-md shadow-sm @error('pengirim_id') border-red-500 @enderror">
                         <option value="">Pilih Pengirim</option>
                     </select>
+                    @error('pengirim_id')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
                     <label for="edit_sifat_surat_id" class="block text-sm font-medium text-gray-700">Sifat Surat</label>
-                    <select id="edit_sifat_surat_id" name="sifat_surat_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <select id="edit_sifat_surat_id" name="sifat_surat_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm @error('sifat_surat_id') border-red-500 @enderror">
                         <option value="">Pilih Sifat</option>
                         @foreach ($sifatSurat as $sifat)
                         <option value="{{ $sifat->id }}">{{ $sifat->nama_sifat }}</option>
                         @endforeach
                     </select>
+                    @error('sifat_surat_id')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
             <div class="mb-4">
                 <label for="edit_perihal" class="block text-sm font-medium text-gray-700">Perihal</label>
-                <input type="text" id="edit_perihal" name="perihal" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                <input type="text" id="edit_perihal" name="perihal" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm @error('perihal') border-red-500 @enderror">
+                @error('perihal')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
             </div>
             <div class="mb-4">
                 <label for="edit_isi_ringkas" class="block text-sm font-medium text-gray-700">Isi Ringkas</label>
-                <textarea id="edit_isi_ringkas" name="isi_ringkas" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                <textarea id="edit_isi_ringkas" name="isi_ringkas" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm @error('isi_ringkas') border-red-500 @enderror"></textarea>
+                @error('isi_ringkas')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
             </div>
             <div class="mb-4">
                 <label for="edit_lampiran" class="block text-sm font-medium text-gray-700">Lampiran Baru (opsional)</label>
                 <input type="file" id="edit_lampiran" name="lampiran" accept=".pdf" class="mt-1 block w-full">
+                @error('lampiran')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
             </div>
             <div class="flex justify-end space-x-2">
                 <button type="button" onclick="closeModal('editModal')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Batal</button>
@@ -214,13 +256,13 @@
         <h3 class="text-lg font-semibold mb-4">Tambah Disposisi</h3>
 
         <!-- FORM -->
-        <form id="disposisiForm" method="POST">
+        <form id="disposisiForm" method="POST" >
             @csrf
             <input type="hidden" id="disposisi_surat_masuk_id" name="surat_masuk_id">
             <!-- PENERIMA -->
             <div class="mb-4">
                 <label for="disposisi_penerima_id" class="block text-sm font-medium text-gray-700">Penerima Disposisi</label>
-                <select id="disposisi_penerima_id" name="penerima_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                <select id="disposisi_penerima_id" name="ke_user_id" class="select2-pengirim mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     <option value="">Pilih Penerima</option>
                 </select>
             </div>
@@ -263,7 +305,7 @@
 
     function openEditModal(id, nomor_agenda, nomor_surat, tanggal_surat, tanggal_terima, perihal, pengirim_id, pengirim_nama, isi_ringkas, sifat_surat_id, lampiran) {
         const form = document.getElementById('editForm');
-        form.action = `{{ url('staff/surat-masuk') }}/${id}`;
+        form.action = `/staff/surat-masuk/${id}`; // Set the correct action URL
         document.getElementById('edit_nomor_agenda').value = nomor_agenda;
         document.getElementById('edit_nomor_surat').value = nomor_surat;
         document.getElementById('edit_tanggal_surat').value = tanggal_surat;
@@ -279,6 +321,7 @@
 
         openModal('editModal');
     }
+
 
     function openShowModal(nomor_agenda, nomor_surat, tanggal_surat, tanggal_terima, perihal, pengirim, sifat_surat, status, isi_ringkas, lampiran) {
         document.getElementById('show_nomor_agenda').textContent = nomor_agenda;
@@ -305,6 +348,10 @@
         document.getElementById('disposisi_surat_masuk_id').value = suratMasukId;
         document.getElementById('disposisiForm').action = `/staff/surat-masuk/${suratMasukId}/disposisi`;
 
+        // Reset the Select2 dropdown
+        const penerimaSelect = $('#disposisi_penerima_id');
+        penerimaSelect.val(null).trigger('change');
+
         openModal('disposisiModal');
     }
 
@@ -317,37 +364,15 @@
             }, 3000);
         });
 
-        $('#pengirim_id, #edit_pengirim_id, #disposisi_penerima_id').select2({
-            ajax: {
-                url: '{{ route("staff.search-users") }}',
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        search: params.term
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data.map(user => ({
-                            id: user.id,
-                            text: `${user.nama} (${user.email})`
-                        }))
-                    };
-                },
-                cache: true
-            },
-            placeholder: 'Cari pengguna...',
-            minimumInputLength: 1
-        });
+       
     });
 </script>
 
 @push('scripts')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
@@ -453,6 +478,126 @@
                 processing: 'Memproses...'
             }
         });
+        
+    // Handle Edit Form Submission with AJAX
+    $('#editForm').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST', // Laravel expects POST for updates with _method=PUT
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                closeModal('editModal');
+                $('#suratMasukTable').DataTable().ajax.reload();
+                Swal.fire({
+                    title: 'Berhasil',
+                    text: response.message || 'Surat masuk berhasil diperbarui.',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            },
+            error: function(xhr) {
+                let errors = xhr.responseJSON.errors || {};
+                let errorMessage = 'Terjadi kesalahan saat memperbarui surat.';
+                if (xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (Object.keys(errors).length) {
+                    errorMessage = Object.values(errors).flat().join('<br>');
+                }
+                Swal.fire({
+                    title: 'Error',
+                    html: errorMessage,
+                    icon: 'error'
+                });
+            }
+        });
+    });
+         // Initialize Select2 for penerima
+        $('.select2-pengirim').select2({
+            placeholder: 'Pilih penerima',
+            allowClear: true,
+            ajax: {
+                url: '{{ route("mahasiswa.search-users") }}',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        search: params.term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.map(function (user) {
+                            return {
+                                id: user.id,
+                                text: `${user.nama} (${user.email} ${user.nip_nim ? ', ' + user.nip_nim : ''})`
+                            };
+                        })
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1,
+            templateResult: function (data) {
+                if (!data.id) {
+                    return data.text;
+                }
+                return $(`
+                    <div class="flex flex-col">
+                        <span class="font-medium">${data.text.split(' (')[0]}</span>
+                        <span class="text-sm text-gray-500">${data.text.split(' (')[1].replace(')', '')}</span>
+                    </div>
+                `);
+            },
+            templateSelection: function (data) {
+                return data.text.split(' (')[0] || data.text;
+            }
+        });
+        
+    // Handle Disposisi Form Submission with AJAX
+    $('#disposisiForm').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            data: form.serialize(),
+            success: function(response) {
+                if (response.success) {
+                    closeModal('disposisiModal');
+                    $('#suratMasukTable').DataTable().ajax.reload();
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: response.message,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            },
+            error: function(xhr) {
+                let errors = xhr.responseJSON.errors || {};
+                let errorMessage = 'Terjadi kesalahan saat mengirim disposisi.';
+                if (xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (Object.keys(errors).length) {
+                    errorMessage = Object.values(errors).flat().join('<br>');
+                }
+                Swal.fire({
+                    title: 'Error',
+                    html: errorMessage,
+                    icon: 'error'
+                });
+            }
+        });
+    });
 
         $('#status_filter').on('change', function() {
             table.ajax.reload();
