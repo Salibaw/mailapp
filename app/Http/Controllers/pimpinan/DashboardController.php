@@ -37,7 +37,7 @@ class DashboardController extends Controller
 
         // 5 Surat masuk terbaru yang didisposisi ke pimpinan
         $disposisiMasukUntukPimpinan = Disposisi::where('ke_user_id', $user->id)
-            ->with(['suratMasuk', 'dariUser'])
+            ->with(['surat_masuk', 'dariUser'])
             ->latest()
             ->take(5)
             ->get();

@@ -29,7 +29,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        return redirect()->intended(
+            $this->redirectPathByRole(Auth::user()->role->name)
+        );
     }
     protected function redirectPathByRole(string $role): string
     {
@@ -39,7 +41,7 @@ class AuthenticatedSessionController extends Controller
             case 'pimpinan':
                 return route('pimpinan.dashboard');
             case 'dosen':
-                return route('admin.dashboard');
+                return route('staff.dashboard');
             case 'staff':
                 return route('staff.dashboard');
             case 'mahasiswa':

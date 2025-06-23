@@ -59,11 +59,21 @@ class SuratKeluarController extends Controller
                     return $suratKeluar->tanggal_surat ? $suratKeluar->tanggal_surat->format('Y-m-d') : '';
                 })
                 ->addColumn('penerima_id', function ($suratKeluar) {
-                    return $suratKeluar->penerima_id ?? '';
+                    return optional($suratKeluar->penerima)->nama ?? '';
                 })
-                ->addColumn('template_surat_id', function ($suratKeluar) {
-                    return $suratKeluar->template_surat_id ?? '';
+                ->addColumn('user.nama', function ($suratKeluar) {
+                    return optional($suratKeluar->user)->nama ?? '';
                 })
+                ->addColumn('status.nama_status', function ($suratKeluar) {
+                    return optional($suratKeluar->status)->nama_status ?? '';
+                })
+                ->addColumn('sifat.nama_sifat', function ($suratKeluar) {
+                    return optional($suratKeluar->sifat)->nama_sifat ?? '';
+                })
+                ->addColumn('action', function ($suratKeluar) {
+                    return ''; // Aksi akan diatur di frontend
+                })
+                ->rawColumns(['action'])
                 ->make(true);
         }
 
@@ -100,9 +110,9 @@ class SuratKeluarController extends Controller
             return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal menambah surat keluar.');
         }
 
-        $drafStatus = StatusSurat::where('nama_status', 'Draf')->first();
+        $drafStatus = StatusSurat::where('nama_status', 'Draft')->first();
         $diterimaStatus = StatusSurat::where('nama_status', 'Diterima')->first();
-        $menungguValidasiStatus = StatusSurat::where('nama_status', 'Menunggu Validasi')->first();
+        $menungguValidasiStatus = StatusSurat::where('nama_status', 'Menunggu Persetujuan')->first();
 
         if (!$drafStatus || !$diterimaStatus || !$menungguValidasiStatus) {
             Log::error('Status surat tidak lengkap: Draf, Diterima, atau Menunggu Validasi tidak ditemukan.');

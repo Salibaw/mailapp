@@ -388,8 +388,7 @@
             }, 3000);
         });
 
-        // Load template content
-        const templates = @json($templateSurat->pluck('isi_template', 'id'));
+        
         document.getElementById('template_surat_id').addEventListener('change', function () {
             const templateId = this.value;
             if (templateId) {

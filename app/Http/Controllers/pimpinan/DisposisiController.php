@@ -16,7 +16,7 @@ class DisposisiController extends Controller
     {
         $userId = Auth::id();
         $disposisiDiterima = Disposisi::where('ke_user_id', $userId)
-                                     ->with(['suratMasuk', 'dariUser'])
+                                     ->with(['surat_masuk', 'dariUser'])
                                      ->latest()
                                      ->paginate(10);
         return view('pimpinan.disposisi.index', compact('disposisiDiterima'));
@@ -31,7 +31,7 @@ class DisposisiController extends Controller
         if ($disposisi->ke_user_id !== Auth::id()) {
             abort(403, 'Anda tidak diizinkan melihat disposisi ini.');
         }
-        $disposisi->load(['suratMasuk', 'dariUser', 'keUser']);
+        $disposisi->load(['surat_masuk', 'dariUser', 'keUser']);
         return view('pimpinan.disposisi.show', compact('disposisi'));
     }
 

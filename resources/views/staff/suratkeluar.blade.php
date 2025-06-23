@@ -45,15 +45,6 @@
                 @endforeach
             </select>
         </div>
-        <div>
-            <label for="role_filter" class="block text-sm font-medium text-gray-700">Filter Pengirim</label>
-            <select id="role_filter" class="mt-1 block w-full max-w-xs border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                <option value="">Semua Pengirim</option>
-                <option value="staff">Staff</option>
-                <option value="mahasiswa">Mahasiswa</option>
-                <option value="dosen">Dosen</option>
-            </select>
-        </div>
     </div>
 
     <!-- DataTables -->
@@ -380,23 +371,23 @@
             showLoaderOnConfirm: true,
             preConfirm: () => {
                 return fetch(`{{ route("staff.surat-keluar.forward", ":id") }}`.replace(':id', id), {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(data => {
-                    if (!data.success) throw new Error(data.message || 'Unknown error');
-                    return data;
-                })
-                .catch(error => {
-                    Swal.showValidationMessage(`Gagal: ${error.message}`);
-                });
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.success) throw new Error(data.message || 'Unknown error');
+                        return data;
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage(`Gagal: ${error.message}`);
+                    });
             }
         }).then((result) => {
             if (result.isConfirmed) {
@@ -418,25 +409,25 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 fetch(`{{ route("staff.surat-keluar.destroy", ":id") }}`.replace(':id', id), {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire('Berhasil!', data.message, 'success').then(() => {
-                            $('#suratKeluarTable').DataTable().ajax.reload();
-                        });
-                    } else {
-                        Swal.fire('Gagal!', data.message, 'error');
-                    }
-                })
-                .catch(error => {
-                    Swal.fire('Error!', 'Gagal menghapus surat: ' + error, 'error');
-                });
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Berhasil!', data.message, 'success').then(() => {
+                                $('#suratKeluarTable').DataTable().ajax.reload();
+                            });
+                        } else {
+                            Swal.fire('Gagal!', data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire('Error!', 'Gagal menghapus surat: ' + error, 'error');
+                    });
             }
         });
     }
@@ -504,7 +495,7 @@
         });
     });
 </script>
-
+@endsection
 @push('scripts')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -530,6 +521,7 @@
                     d.role = $('#role_filter').val();
                 },
                 error: function(xhr) {
+                    console.error('DataTable Error:', xhr);
                     Swal.fire({
                         title: 'Error',
                         text: 'Gagal memuat data: ' + (xhr.responseText || 'Unknown error'),
@@ -537,41 +529,67 @@
                     });
                 }
             },
-            columns: [
-                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
-                { data: 'nomor_surat', name: 'nomor_surat' },
-                { data: 'tanggal_surat', name: 'tanggal_surat' },
-                { data: 'perihal', name: 'perihal' },
-                { data: 'penerima.nama', name: 'penerima.nama' },
-                { data: 'user.nama', name: 'user.nama' },
-                { data: 'status.nama_status', name: 'status.nama_status' },
-                { data: 'sifat.nama_sifat', name: 'sifat.nama_sifat' },
+            columns: [{
+                    data: 'DT_RowIndex',
+                    name: 'DT_RowIndex',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'nomor_surat',
+                    name: 'nomor_surat'
+                },
+                {
+                    data: 'tanggal_surat',
+                    name: 'tanggal_surat'
+                },
+                {
+                    data: 'perihal',
+                    name: 'perihal'
+                },
+                {
+                    data: 'penerima_id',
+                    name: 'penerima_id'
+                },
+                {
+                    data: 'user.nama',
+                    name: 'user.nama'
+                },
+                {
+                    data: 'status.nama_status',
+                    name: 'status.nama_status'
+                },
+                {
+                    data: 'sifat.nama_sifat',
+                    name: 'sifat.nama_sifat'
+                },
                 {
                     data: null,
                     name: 'action',
                     orderable: false,
                     searchable: false,
-                    render: function(data) {
-                        let escapedNomorSurat = (data.nomor_surat || '').replace(/"/g, '"').replace(/\n/g, '\\n');
-                        let escapedPerihal = (data.perihal || '').replace(/"/g, '"').replace(/\n/g, '\\n');
-                        let escapedIsiSurat = (data.isi_surat || '').replace(/"/g, '"').replace(/\n/g, '\\n');
-                        let escapedPengirim = (data.user ? data.user.nama : '-').replace(/"/g, '"').replace(/\n/g, '\\n');
-                        let escapedPenerima = (data.penerima ? data.penerima.nama : '-').replace(/"/g, '"').replace(/\n/g, '\\n');
-                        let escapedSifat = (data.sifat ? data.sifat.nama_sifat : '-').replace(/"/g, '"').replace(/\n/g, '\\n');
-                        let escapedStatus = (data.status ? data.status.nama_status : '-').replace(/"/g, '"').replace(/\n/g, '\\n');
-                        let escapedCatatan = (data.catatan_surat || '-').replace(/"/g, '"').replace(/\n/g, '\\n');
-                        let lampiranUrl = data.lampiran ? '/storage/' + data.lampiran : '';
-                        let tanggalSuratRaw = data.tanggal_surat_raw || '';
+                    render: function(data, type, row) {
+                        if (type === 'display') {
+                            let escapedNomorSurat = (data.nomor_surat || '').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                            let escapedPerihal = (data.perihal || '').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                            let escapedIsiSurat = (data.isi_surat || '').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                            let escapedPengirim = (data.user ? data.user.nama : '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                            let escapedPenerima = (data.penerima_id || '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                            let escapedSifat = (data.sifat ? data.sifat.nama_sifat : '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                            let escapedStatus = (data.status ? data.status.nama_status : '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                            let escapedCatatan = (data.catatan_surat || '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                            let lampiranUrl = data.lampiran ? '/storage/' + data.lampiran : '';
+                            let tanggalSuratRaw = data.tanggal_surat_raw || '';
 
-                        let actions = `
+                            let actions = `
                             <button onclick="openShowModal('${escapedNomorSurat}', '${data.tanggal_surat}', '${escapedPerihal}', '${escapedPengirim}', '${escapedPenerima}', '${escapedSifat}', '${escapedStatus}', '${escapedCatatan}', '${escapedIsiSurat}', '${lampiranUrl}')"
                                 class="text-blue-600 hover:text-blue-800 mr-2">
                                 <i class="fas fa-eye"></i> Lihat
                             </button>
                         `;
 
-                        if (data.status && data.status.nama_status === 'Draf') {
-                            actions += `
+                            if (data.status && data.status.nama_status === 'Draf') {
+                                actions += `
                                 <button onclick="openEditModal(${data.id}, '${tanggalSuratRaw}', '${escapedPerihal}', '${data.penerima_id || ''}', '${escapedPenerima}', '${escapedIsiSurat}', '${data.sifat_surat_id || ''}', '${data.template_surat_id || ''}', '${lampiranUrl}', '${escapedCatatan}')"
                                     class="text-green-600 hover:text-green-800 mr-2">
                                     <i class="fas fa-edit"></i> Edit
@@ -585,8 +603,8 @@
                                     <i class="fas fa-trash"></i> Hapus
                                 </button>
                             `;
-                        } else if (data.status && data.status.nama_status === 'Menunggu Validasi') {
-                            actions += `
+                            } else if (data.status && data.status.nama_status === 'Menunggu Validasi') {
+                                actions += `
                                 <button onclick="openAssignNumberModal(${data.id}, '${escapedNomorSurat}')"
                                     class="text-orange-600 hover:text-orange-800 mr-2">
                                     <i class="fas fa-tag"></i> Beri Nomor
@@ -596,16 +614,18 @@
                                     <i class="fas fa-check-circle"></i> Validasi
                                 </button>
                             `;
-                        } else if (data.status && data.status.nama_status === 'Disetujui') {
-                            actions += `
+                            } else if (data.status && data.status.nama_status === 'Disetujui') {
+                                actions += `
                                 <a href="{{ route('staff.surat-keluar.download', ':id') }}".replace(':id', ${data.id})
                                     class="text-green-600 hover:text-green-800 mr-2">
                                     <i class="fas fa-download"></i> Unduh PDF
                                 </a>
                             `;
-                        }
+                            }
 
-                        return actions;
+                            return actions;
+                        }
+                        return '';
                     }
                 }
             ],
@@ -634,4 +654,3 @@
     });
 </script>
 @endpush
-@endsection

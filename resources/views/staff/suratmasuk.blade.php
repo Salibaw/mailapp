@@ -270,7 +270,7 @@
             <!-- CATATAN -->
             <div class="mb-4">
                 <label for="catatan" class="block text-sm font-medium text-gray-700">Catatan</label>
-                <textarea id="catatan" name="catatan" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                <textarea id="catatan" name="instruksi" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
             </div>
 
             <!-- BUTTON -->

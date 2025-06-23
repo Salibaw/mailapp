@@ -19,14 +19,14 @@
                 {!! nl2br(e($disposisi->instruksi)) !!}
             </div>
 
-            @if($disposisi->suratMasuk->lampiran)
+            @if($disposisi->surat_masuk->lampiran)
                 <h5 class="mt-3">Lampiran Surat Masuk:</h5>
-                <p><a href="{{ asset('storage/' . $disposisi->suratMasuk->lampiran) }}" target="_blank" class="btn btn-outline-primary">Lihat / Unduh Lampiran Surat</a></p>
+                <p><a href="{{ asset('storage/' . $disposisi->surat_masuk->lampiran) }}" target="_blank" class="btn btn-outline-primary">Lihat / Unduh Lampiran Surat</a></p>
             @endif
 
             <div class="mt-4">
                 <a href="{{ route('pimpinan.disposisi.index') }}" class="btn btn-secondary">Kembali</a>
-                <a href="{{ route('pimpinan.surat-masuk.show', $disposisi->suratMasuk->id) }}" class="btn btn-info">Lihat Detail Surat Masuk</a>
+                <a href="{{ route('pimpinan.surat-masuk.show', $disposisi->surat_masuk->id) }}" class="btn btn-info">Lihat Detail Surat Masuk</a>
             </div>
         </div>
     </div>
