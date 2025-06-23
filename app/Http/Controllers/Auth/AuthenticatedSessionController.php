@@ -36,8 +36,8 @@ class AuthenticatedSessionController extends Controller
         switch ($role) {
             case 'admin':
                 return route('admin.dashboard');
-            case 'rektorat':
-                return route('admin.dashboard');
+            case 'pimpinan':
+                return route('pimpinan.dashboard');
             case 'dosen':
                 return route('admin.dashboard');
             case 'staff':

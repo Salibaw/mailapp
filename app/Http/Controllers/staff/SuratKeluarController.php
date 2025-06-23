@@ -10,11 +10,13 @@ use App\Models\SuratMasuk;
 use App\Models\TemplateSurat;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Log;
 
 class SuratKeluarController extends Controller
 {
@@ -34,10 +36,9 @@ class SuratKeluarController extends Controller
                     'lampiran',
                     'template_surat_id',
                     'user_id',
-                    'perihal'
+                    'catatan_surat'
                 ])
                 ->where('user_id', Auth::id());
-
 
             if ($request->status_id) {
                 $query->where('status_id', $request->status_id);
@@ -45,23 +46,23 @@ class SuratKeluarController extends Controller
 
             if ($request->role) {
                 $query->whereHas('user', function ($q) use ($request) {
-                    $q->where('role', $request->role);
+                    $q->where('role_id', $request->role);
                 });
             }
 
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->editColumn('tanggal_surat', function ($suratKeluar) {
-                    return $suratKeluar->tanggal_surat->format('d-m-Y');
+                    return $suratKeluar->tanggal_surat ? $suratKeluar->tanggal_surat->format('d-m-Y') : '-';
                 })
                 ->addColumn('tanggal_surat_raw', function ($suratKeluar) {
-                    return $suratKeluar->tanggal_surat->format('Y-m-d');
+                    return $suratKeluar->tanggal_surat ? $suratKeluar->tanggal_surat->format('Y-m-d') : '';
                 })
                 ->addColumn('penerima_id', function ($suratKeluar) {
-                    return $suratKeluar->penerima_id;
+                    return $suratKeluar->penerima_id ?? '';
                 })
                 ->addColumn('template_surat_id', function ($suratKeluar) {
-                    return $suratKeluar->template_surat_id;
+                    return $suratKeluar->template_surat_id ?? '';
                 })
                 ->make(true);
         }
@@ -74,76 +75,68 @@ class SuratKeluarController extends Controller
 
     public function store(Request $request)
     {
-        // Validate the incoming request
-        $validated = $request->validate([
-            'nomor_surat' => 'nullable|string|max:50',
-            'template_id' => 'nullable|exists:template_surats,id',
-            'penerima_id' => 'required|exists:users,id',
-            'sifat_surat_id' => 'required|exists:sifat_surats,id',
+        $validator = Validator::make($request->all(), [
+            'nomor_surat' => 'nullable|string|max:255|unique:surat_keluars,nomor_surat',
             'tanggal_surat' => 'required|date',
             'perihal' => 'required|string|max:255',
+            'penerima_id' => 'required|exists:users,id',
             'isi_surat' => 'required|string',
-            'lampiran' => 'nullable|file|mimes:pdf|max:2048',
-            'action' => 'required|in:draft,submit', // Added action validation
+            'sifat_surat_id' => 'required|exists:sifat_surats,id',
+            'template_surat_id' => 'nullable|exists:template_surats,id',
+            'lampiran' => 'nullable|file|mimes:pdf|max:5120',
+            'catatan_surat' => 'nullable|string',
+        ], [
+            'nomor_surat.unique' => 'Nomor surat sudah digunakan.',
+            'tanggal_surat.required' => 'Tanggal surat wajib diisi.',
+            'perihal.required' => 'Perihal wajib diisi.',
+            'penerima_id.required' => 'Penerima wajib diisi.',
+            'isi_surat.required' => 'Isi surat wajib diisi.',
+            'sifat_surat_id.required' => 'Sifat surat wajib dipilih.',
+            'lampiran.mimes' => 'Lampiran harus berformat PDF.',
+            'lampiran.max' => 'Lampiran maksimum 5MB.',
         ]);
 
-        // Prepare data for SuratKeluar
-        $data = $request->only([
-            'nomor_surat',
-            'template_id',
-            'penerima_id',
-            'sifat_surat_id',
-            'tanggal_surat',
-            'perihal',
-            'isi_surat',
-        ]);
-        $data['user_id'] = Auth::id();
-
-        // Set status_id based on action and sifat_surat
-        if ($request->action === 'draft') {
-            $statusDraf = StatusSurat::where('nama_status', 'Draft')->first();
-            if (!$statusDraf) {
-                return redirect()->back()->withErrors(['status' => 'Status "Draf" tidak ditemukan di database.'])->withInput();
-            }
-            $data['status_id'] = $statusDraf->id;
-        } else {
-            // For 'submit', set status based on sifat_surat
-            $sifatSurat = SifatSurat::where('id', $request->sifat_surat_id)->first();
-            if (!$sifatSurat) {
-                return redirect()->back()->withErrors(['sifat_surat' => 'Sifat surat tidak ditemukan.'])->withInput();
-            }
-
-            if ($sifatSurat->nama_sifat === 'Biasa') {
-                $statusDiterima = StatusSurat::where('nama_status', 'Diterima')->first();
-                if (!$statusDiterima) {
-                    return redirect()->back()->withErrors(['status' => 'Status "Diterima" tidak ditemukan di database.'])->withInput();
-                }
-                $data['status_id'] = $statusDiterima->id;
-            } elseif ($sifatSurat->nama_sifat === 'Penting') {
-                $statusMenunggu = StatusSurat::where('nama_status', 'Menunggu Persetujuan')->first();
-                if (!$statusMenunggu) {
-                    return redirect()->back()->withErrors(['status' => 'Status "Menunggu" tidak ditemukan di database.'])->withInput();
-                }
-                $data['status_id'] = $statusMenunggu->id;
-            } else {
-                return redirect()->back()->withErrors(['sifat_surat' => 'Sifat surat tidak valid (harus Biasa atau Penting).'])->withInput();
-            }
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal menambah surat keluar.');
         }
 
-        // Handle lampiran file upload
+        $drafStatus = StatusSurat::where('nama_status', 'Draf')->first();
+        $diterimaStatus = StatusSurat::where('nama_status', 'Diterima')->first();
+        $menungguValidasiStatus = StatusSurat::where('nama_status', 'Menunggu Validasi')->first();
+
+        if (!$drafStatus || !$diterimaStatus || !$menungguValidasiStatus) {
+            Log::error('Status surat tidak lengkap: Draf, Diterima, atau Menunggu Validasi tidak ditemukan.');
+            return redirect()->back()->with('error', 'Konfigurasi status surat tidak lengkap. Hubungi administrator.')->withInput();
+        }
+
+        $data = $request->only([
+            'nomor_surat',
+            'tanggal_surat',
+            'perihal',
+            'penerima_id',
+            'isi_surat',
+            'sifat_surat_id',
+            'template_surat_id',
+            'catatan_surat',
+        ]);
+
+        $data['user_id'] = Auth::id();
+        $sifatBiasa = SifatSurat::where('nama_sifat', 'Biasa')->first();
+
+        $data['status_id'] = $request->action === 'draft'
+            ? $drafStatus->id
+            : ($sifatBiasa && $request->sifat_surat_id == $sifatBiasa->id ? $diterimaStatus->id : $menungguValidasiStatus->id);
+
         if ($request->hasFile('lampiran')) {
             $data['lampiran'] = $request->file('lampiran')->store('lampiran', 'public');
         }
 
-        // Create SuratKeluar and SuratMasuk in a transaction
-        return DB::transaction(function () use ($request, $data) {
-            // Create SuratKeluar record
+        DB::beginTransaction();
+        try {
             $suratKeluar = SuratKeluar::create($data);
 
-            // Create SuratMasuk record if submitted
-            if ($request->action === 'submit') {
+            if ($request->action !== 'draft') {
                 $nomorAgenda = 'AGENDA/' . now()->format('Y') . '/' . str_pad(SuratMasuk::count() + 1, 3, '0', STR_PAD_LEFT);
-
                 SuratMasuk::create([
                     'nomor_agenda' => $nomorAgenda,
                     'nomor_surat' => $suratKeluar->nomor_surat,
@@ -154,32 +147,52 @@ class SuratKeluarController extends Controller
                     'isi_ringkas' => substr($suratKeluar->isi_surat, 0, 255),
                     'lampiran' => $suratKeluar->lampiran,
                     'user_id' => $suratKeluar->penerima_id,
-                    'status_id' => $data['status_id'], // Use same status as SuratKeluar
+                    'status_id' => $data['status_id'],
                     'sifat_surat_id' => $suratKeluar->sifat_surat_id,
+                    'catatan_surat' => $data['catatan_surat'],
                 ]);
+
+                Log::info('Surat keluar ID: ' . $suratKeluar->id . ' dibuat dan surat masuk dibuat dengan nomor agenda: ' . $nomorAgenda);
             }
 
-            return redirect()->route('staff.surat-keluar.index')
-                ->with('success', 'Surat keluar berhasil dibuat.');
-        });
+            DB::commit();
+            return redirect()->route('staff.surat-keluar.index')->with('success', 'Surat keluar berhasil disimpan.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Gagal menyimpan surat keluar: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan surat keluar.')->withInput();
+        }
     }
+
     public function update(Request $request, SuratKeluar $suratKeluar)
     {
-        if ($suratKeluar->status->nama_status !== 'Draf') {
+        if (!$suratKeluar->status || $suratKeluar->status->nama_status !== 'Draf') {
             return redirect()->back()->with('error', 'Hanya surat dengan status Draf yang dapat diedit.')->withInput();
         }
 
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'template_id' => 'nullable|exists:template_surats,id',
             'penerima_id' => 'required|exists:users,id',
             'sifat_surat_id' => 'required|exists:sifat_surats,id',
             'tanggal_surat' => 'required|date',
             'perihal' => 'required|string|max:255',
             'isi_surat' => 'required|string',
-            'perihal' => 'nullable|string',
             'lampiran' => 'nullable|file|mimes:pdf|max:2048',
+            'catatan_surat' => 'nullable|string',
             'action' => 'required|in:draft,submit',
         ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal memperbarui surat keluar.');
+        }
+
+        $drafStatus = StatusSurat::where('nama_status', 'Draf')->first();
+        $menungguValidasiStatus = StatusSurat::where('nama_status', 'Menunggu Validasi')->first();
+
+        if (!$drafStatus || !$menungguValidasiStatus) {
+            Log::error('Status surat tidak lengkap: Draf atau Menunggu Validasi tidak ditemukan.');
+            return redirect()->back()->with('error', 'Konfigurasi status surat tidak lengkap. Hubungi administrator.')->withInput();
+        }
 
         $data = $request->only([
             'template_id',
@@ -188,11 +201,10 @@ class SuratKeluarController extends Controller
             'tanggal_surat',
             'perihal',
             'isi_surat',
-            'perihal',
+            'catatan_surat',
         ]);
-        $data['status_id'] = $request->action === 'draft'
-            ? StatusSurat::where('nama_status', 'Draf')->first()->id ?? 1
-            : StatusSurat::where('nama_status', 'Menunggu Validasi')->first()->id ?? 2;
+
+        $data['status_id'] = $request->action === 'draft' ? $drafStatus->id : $menungguValidasiStatus->id;
 
         if ($request->hasFile('lampiran')) {
             if ($suratKeluar->lampiran) {
@@ -201,94 +213,154 @@ class SuratKeluarController extends Controller
             $data['lampiran'] = $request->file('lampiran')->store('lampiran', 'public');
         }
 
-        $suratKeluar->update($data);
+        DB::beginTransaction();
+        try {
+            $suratKeluar->update($data);
+            Log::info('Surat keluar ID: ' . $suratKeluar->id . ' diperbarui dengan status: ' . $data['status_id']);
 
-        return redirect()->route('staff.surat-keluar.index')
-            ->with('success', 'Surat keluar berhasil diperbarui.');
+            DB::commit();
+            return redirect()->route('staff.surat-keluar.index')->with('success', 'Surat keluar berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Gagal memperbarui surat keluar: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memperbarui surat keluar.')->withInput();
+        }
     }
 
     public function destroy(SuratKeluar $suratKeluar)
     {
-        if ($suratKeluar->status->nama_status !== 'Draf') {
+        if (!$suratKeluar->status || $suratKeluar->status->nama_status !== 'Draf') {
             return response()->json(['success' => false, 'message' => 'Hanya surat dengan status Draf yang dapat dihapus.'], 403);
         }
 
-        if ($suratKeluar->lampiran) {
-            Storage::disk('public')->delete($suratKeluar->lampiran);
+        DB::beginTransaction();
+        try {
+            if ($suratKeluar->lampiran) {
+                Storage::disk('public')->delete($suratKeluar->lampiran);
+            }
+            $suratKeluar->delete();
+            Log::info('Surat keluar ID: ' . $suratKeluar->id . ' dihapus.');
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Surat keluar berhasil dihapus.']);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Gagal menghapus surat keluar: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus surat keluar.'], 500);
         }
-        $suratKeluar->delete();
-
-        return response()->json(['success' => true, 'message' => 'Surat keluar berhasil dihapus.']);
     }
 
     public function validateSurat(Request $request, SuratKeluar $suratKeluar)
     {
-        if ($suratKeluar->status->nama_status !== 'Menunggu Validasi') {
+        if (!$suratKeluar->status || $suratKeluar->status->nama_status !== 'Menunggu Validasi') {
             return redirect()->back()->with('error', 'Hanya surat dengan status Menunggu Validasi yang dapat divalidasi.')->withInput();
         }
 
-        $validated = $request->validate([
-            'nomor_surat' => 'required|string|max:50',
+        $validator = Validator::make($request->all(), [
+            'nomor_surat' => 'required|string|max:50|unique:surat_keluars,nomor_surat,' . $suratKeluar->id,
             'status' => 'required|in:Disetujui,Ditolak',
-            'perihal' => 'nullable|string',
+            'catatan_surat' => 'nullable|string',
         ]);
 
-        $statusId = StatusSurat::where('nama_status', $request->status)->first()->id ?? ($request->status === 'Disetujui' ? 3 : 4);
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal memvalidasi surat keluar.');
+        }
 
-        $suratKeluar->update([
-            'nomor_surat' => $request->nomor_surat,
-            'status_id' => $statusId,
-            'perihal' => $request->perihal,
-        ]);
+        $status = StatusSurat::where('nama_status', $request->status)->first();
+        if (!$status) {
+            Log::error('Status surat tidak ditemukan: ' . $request->status);
+            return redirect()->back()->with('error', 'Status surat tidak valid. Hubungi administrator.')->withInput();
+        }
 
-        return redirect()->route('staff.surat-keluar.index')
-            ->with('success', 'Surat keluar berhasil divalidasi.');
+        DB::beginTransaction();
+        try {
+            $suratKeluar->update([
+                'nomor_surat' => $request->nomor_surat,
+                'status_id' => $status->id,
+                'catatan_surat' => $request->catatan_surat,
+            ]);
+
+            Log::info('Surat keluar ID: ' . $suratKeluar->id . ' divalidasi dengan status: ' . $request->status);
+
+            DB::commit();
+            return redirect()->route('staff.surat-keluar.index')->with('success', 'Surat keluar berhasil divalidasi.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Gagal memvalidasi surat keluar: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memvalidasi surat keluar.')->withInput();
+        }
     }
 
     public function assignNumber(Request $request, SuratKeluar $suratKeluar)
     {
-        if ($suratKeluar->status->nama_status !== 'Menunggu Validasi') {
+        if (!$suratKeluar->status || $suratKeluar->status->nama_status !== 'Menunggu Validasi') {
             return redirect()->back()->with('error', 'Hanya surat dengan status Menunggu Validasi yang dapat diberi nomor.')->withInput();
         }
 
-        $validated = $request->validate([
-            'nomor_surat' => 'required|string|max:50',
+        $validator = Validator::make($request->all(), [
+            'nomor_surat' => 'required|string|max:50|unique:surat_keluars,nomor_surat,' . $suratKeluar->id,
         ]);
 
-        $suratKeluar->update([
-            'nomor_surat' => $request->nomor_surat,
-        ]);
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput()->with('error', 'Gagal memberikan nomor surat.');
+        }
 
-        return redirect()->route('staff.surat-keluar.index')
-            ->with('success', 'Nomor surat berhasil diberikan.');
+        $nomorSurat = $request->nomor_surat ?: 'SURAT/' . now()->format('Y') . '/' . str_pad(SuratKeluar::count() + 1, 3, '0', STR_PAD_LEFT);
+
+        DB::beginTransaction();
+        try {
+            $suratKeluar->update(['nomor_surat' => $nomorSurat]);
+            Log::info('Nomor surat ' . $nomorSurat . ' diberikan untuk surat keluar ID: ' . $suratKeluar->id);
+
+            DB::commit();
+            return redirect()->route('staff.surat-keluar.index')->with('success', 'Nomor surat berhasil diberikan.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Gagal memberikan nomor surat: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memberikan nomor surat.')->withInput();
+        }
     }
 
     public function forwardForApproval(SuratKeluar $suratKeluar)
     {
-        if ($suratKeluar->status->nama_status !== 'Draf') {
+        if (!$suratKeluar->status || $suratKeluar->status->nama_status !== 'Draf') {
             return response()->json(['success' => false, 'message' => 'Hanya surat dengan status Draf yang dapat dikirim untuk persetujuan.'], 403);
         }
 
-        $suratKeluar->update([
-            'status_id' => StatusSurat::where('nama_status', 'Menunggu Validasi')->first()->id ?? 2,
-        ]);
+        $menungguValidasiStatus = StatusSurat::where('nama_status', 'Menunggu Validasi')->first();
+        if (!$menungguValidasiStatus) {
+            return response()->json(['success' => false, 'message' => 'Status Menunggu Validasi tidak ditemukan.'], 500);
+        }
 
-        // Optional: Notify pimpinan
-        // \App\Models\User::where('role', 'pimpinan')->each(function ($pimpinan) {
-        //     $pimpinan->notify(new \App\Notifications\SuratKeluarApproval($suratKeluar));
-        // });
-
-        return response()->json(['success' => true, 'message' => 'Surat keluar berhasil dikirim untuk validasi.']);
+        DB::beginTransaction();
+        try {
+            $suratKeluar->update(['status_id' => $menungguValidasiStatus->id]);
+            Log::info('Surat keluar ID: ' . $suratKeluar->id . ' dikirim untuk persetujuan.');
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Surat keluar berhasil dikirim untuk validasi.']);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Gagal mengirim surat untuk persetujuan: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal mengirim surat untuk persetujuan.'], 500);
+        }
     }
 
     public function download(SuratKeluar $suratKeluar)
     {
-        if ($suratKeluar->status->nama_status !== 'Disetujui') {
+        if (!$suratKeluar->status || $suratKeluar->status->nama_status !== 'Disetujui') {
             return redirect()->route('staff.surat-keluar.index')->with('error', 'Hanya surat dengan status Disetujui yang dapat diunduh.');
         }
 
-        $pdf = Pdf::loadView('staff.suratkeluar.pdf', compact('suratKeluar'));
-        return $pdf->download('surat-keluar-' . ($suratKeluar->nomor_surat ?? 'document') . '.pdf');
+        try {
+            $pdf = Pdf::loadView('staff.surat_keluar.pdf', [
+                'suratKeluar' => $suratKeluar,
+                'watermark' => 'Dokumen Resmi - ' . now()->format('Y-m-d'),
+            ]);
+            $pdf->setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+            return $pdf->download('surat-keluar-' . ($suratKeluar->nomor_surat ?? 'document') . '.pdf');
+        } catch (\Exception $e) {
+            Log::error('Gagal mendownload PDF: ' . $e->getMessage());
+            return redirect()->route('staff.surat-keluar.index')->with('error', 'Gagal mengunduh PDF.');
+        }
     }
 
     public function searchUsers(Request $request)

@@ -8,22 +8,22 @@
 <div class="bg-white p-6 rounded-lg shadow">
     <!-- Alerts -->
     @if (session('success'))
-        <div id="alert-success" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded relative flex items-center">
-            <i class="fas fa-check-circle mr-2"></i>
-            <span>{{ session('success') }}</span>
-            <button onclick="closeAlert('alert-success')" class="absolute right-4 text-green-700 hover:text-green-900">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
+    <div id="alert-success" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded relative flex items-center" role="alert">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span>{{ session('success') }}</span>
+        <button onclick="closeAlert('alert-success')" class="absolute right-4 text-green-700 hover:text-green-900">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
     @endif
     @if (session('error'))
-        <div id="alert-error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded relative flex items-center">
-            <i class="fas fa-exclamation-circle mr-2"></i>
-            <span>{{ session('error') }}</span>
-            <button onclick="closeAlert('alert-error')" class="absolute right-4 text-red-700 hover:text-red-900">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
+    <div id="alert-error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded relative flex items-center" role="alert">
+        <i class="fas fa-exclamation-circle mr-2"></i>
+        <span>{{ session('error') }}</span>
+        <button onclick="closeAlert('alert-error')" class="absolute right-4 text-red-700 hover:text-red-900">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
     @endif
 
     <!-- Header and Create Button -->
@@ -41,7 +41,7 @@
             <select id="status_filter" class="mt-1 block w-full max-w-xs border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                 <option value="">Semua Status</option>
                 @foreach ($statusSurat as $status)
-                    <option value="{{ $status->id }}">{{ $status->nama_status }}</option>
+                <option value="{{ $status->id }}">{{ $status->nama_status }}</option>
                 @endforeach
             </select>
         </div>
@@ -84,13 +84,13 @@
         <form id="createForm" action="{{ route('staff.surat-keluar.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             @if ($errors->any())
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -102,7 +102,7 @@
                     <select id="template_id" name="template_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         <option value="">Pilih Template (Opsional)</option>
                         @foreach ($templates as $template)
-                            <option value="{{ $template->id }}">{{ $template->nama_template }}</option>
+                        <option value="{{ $template->id }}">{{ $template->nama_template }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -121,7 +121,7 @@
                     <select id="sifat_surat_id" name="sifat_surat_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                         <option value="">Pilih Sifat</option>
                         @foreach ($sifatSurat as $sifat)
-                            <option value="{{ $sifat->id }}">{{ $sifat->nama_sifat }}</option>
+                        <option value="{{ $sifat->id }}">{{ $sifat->nama_sifat }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -159,13 +159,13 @@
             @csrf
             @method('PUT')
             @if ($errors->any())
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -173,7 +173,7 @@
                     <select id="edit_template_id" name="template_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         <option value="">Pilih Template (Opsional)</option>
                         @foreach ($templates as $template)
-                            <option value="{{ $template->id }}">{{ $template->nama_template }}</option>
+                        <option value="{{ $template->id }}">{{ $template->nama_template }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -192,7 +192,7 @@
                     <select id="edit_sifat_surat_id" name="sifat_surat_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" required>
                         <option value="">Pilih Sifat</option>
                         @foreach ($sifatSurat as $sifat)
-                            <option value="{{ $sifat->id }}">{{ $sifat->nama_sifat }}</option>
+                        <option value="{{ $sifat->id }}">{{ $sifat->nama_sifat }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -302,6 +302,7 @@
         document.getElementById(modalId).classList.add('hidden');
         if (modalId === 'createModal' || modalId === 'editModal') {
             document.getElementById(modalId === 'createModal' ? 'createForm' : 'editForm').reset();
+            $('#penerima_id, #edit_penerima_id').val(null).trigger('change');
         }
     }
 
@@ -318,19 +319,15 @@
     function openEditModal(id, tanggal_surat, perihal, penerima_id, penerima_nama, isi_surat, sifat_surat_id, template_id, lampiran, catatan_surat) {
         const form = document.getElementById('editForm');
         form.action = '{{ route("staff.surat-keluar.update", ":id") }}'.replace(':id', id);
-        document.getElementById('edit_tanggal_surat').value = tanggal_surat;
-        document.getElementById('edit_perihal').value = perihal;
+        document.getElementById('edit_tanggal_surat').value = tanggal_surat || '';
+        document.getElementById('edit_perihal').value = perihal || '';
         document.getElementById('edit_isi_surat').value = isi_surat || '';
         document.getElementById('edit_sifat_surat_id').value = sifat_surat_id || '';
         document.getElementById('edit_template_id').value = template_id || '';
         document.getElementById('edit_catatan_surat').value = catatan_surat || '';
 
         const penerimaSelect = $('#edit_penerima_id');
-        penerimaSelect.empty();
-        if (penerima_id && penerima_nama) {
-            penerimaSelect.append(new Option(penerima_nama, penerima_id, true, true));
-        }
-        penerimaSelect.trigger('change');
+        penerimaSelect.empty().append(new Option(penerima_nama || 'Pilih Penerima', penerima_id || '', true, !!penerima_id)).trigger('change');
 
         openModal('editModal');
     }
@@ -375,31 +372,36 @@
     function forwardForApproval(id) {
         Swal.fire({
             title: 'Kirim untuk Persetujuan?',
-            text: 'Surat akan dikirim untuk validasi oleh pimpinan.',
+            text: 'Surat akan dikirim untuk validasi.',
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Kirim',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch('{{ route("staff.surat-keluar.forward", ":id") }}'.replace(':id', id), {
+            cancelButtonText: 'Batal',
+            showLoaderOnConfirm: true,
+            preConfirm: () => {
+                return fetch(`{{ route("staff.surat-keluar.forward", ":id") }}`.replace(':id', id), {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Content-Type': 'application/json'
                     }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.success) {
-                        Swal.fire('Berhasil!', data.message, 'success');
-                        $('#suratKeluarTable').DataTable().ajax.reload();
-                    } else {
-                        Swal.fire('Gagal!', data.message, 'error');
-                    }
+                    if (!data.success) throw new Error(data.message || 'Unknown error');
+                    return data;
                 })
                 .catch(error => {
-                    Swal.fire('Error!', 'Gagal mengirim surat: ' + error, 'error');
+                    Swal.showValidationMessage(`Gagal: ${error.message}`);
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire('Berhasil!', result.value.message, 'success').then(() => {
+                    $('#suratKeluarTable').DataTable().ajax.reload();
                 });
             }
         });
@@ -415,7 +417,7 @@
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch('{{ route("staff.surat-keluar.destroy", ":id") }}'.replace(':id', id), {
+                fetch(`{{ route("staff.surat-keluar.destroy", ":id") }}`.replace(':id', id), {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -425,8 +427,9 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        Swal.fire('Berhasil!', data.message, 'success');
-                        $('#suratKeluarTable').DataTable().ajax.reload();
+                        Swal.fire('Berhasil!', data.message, 'success').then(() => {
+                            $('#suratKeluarTable').DataTable().ajax.reload();
+                        });
                     } else {
                         Swal.fire('Gagal!', data.message, 'error');
                     }
@@ -438,12 +441,12 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const alerts = document.querySelectorAll('[id^="alert-"]');
         alerts.forEach(alert => {
             setTimeout(() => {
                 alert.classList.add('hidden');
-            }, 3000);
+            }, 5000); // Alert akan hilang setelah 5 detik
         });
 
         $('#penerima_id, #edit_penerima_id').select2({
@@ -451,10 +454,13 @@
                 url: '{{ route("staff.search-users") }}',
                 dataType: 'json',
                 delay: 250,
-                data: function (params) {
-                    return { search: params.term };
+                data: function(params) {
+                    return {
+                        search: params.term
+                    };
                 },
-                processResults: function (data) {
+                processResults: function(data) {
+                    console.log('Data received:', data); // Debug
                     return {
                         results: data.map(user => ({
                             id: user.id,
@@ -465,23 +471,35 @@
                 cache: true
             },
             placeholder: 'Cari penerima...',
-            minimumInputLength: 1
+            minimumInputLength: 1,
+            allowClear: true
+        }).on('select2:open', function() {
+            console.log('Select2 opened'); // Debug
         });
 
-        $('#template_id, #edit_template_id').on('change', function () {
+        $('#template_id, #edit_template_id').on('change', function() {
             const templateId = $(this).val();
             const textareaId = $(this).attr('id').includes('edit') ? 'edit_isi_surat' : 'isi_surat';
             if (templateId) {
-                fetch('{{ route("staff.template-surat.show", ":id") }}'.replace(':id', templateId))
-                    .then(response => response.json())
+                fetch(`{{ route("staff.template-surat.show", ":id") }}`.replace(':id', templateId))
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
                     .then(data => {
                         if (data.isi_template) {
                             document.getElementById(textareaId).value = data.isi_template;
+                        } else {
+                            console.log('No isi_template in response:', data);
+                            document.getElementById(textareaId).value = '';
                         }
                     })
                     .catch(error => {
-                        Swal.fire('Error!', 'Gagal memuat template: ' + error, 'error');
+                        console.error('Error fetching template:', error);
+                        Swal.fire('Error!', 'Gagal memuat template: ' + error.message, 'error');
                     });
+            } else {
+                document.getElementById(textareaId).value = '';
             }
         });
     });
@@ -501,13 +519,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
         const table = $('#suratKeluarTable').DataTable({
             serverSide: true,
             processing: true,
             ajax: {
                 url: '{{ route("staff.surat-keluar.index") }}',
-                data: function (d) {
+                data: function(d) {
                     d.status_id = $('#status_filter').val();
                     d.role = $('#role_filter').val();
                 },
@@ -533,28 +551,28 @@
                     name: 'action',
                     orderable: false,
                     searchable: false,
-                    render: function (data) {
-                        let escapedNomorSurat = (data.nomor_surat || '').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-                        let escapedPerihal = (data.perihal || '').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-                        let escapedIsiSurat = (data.isi_surat || '').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-                        let escapedPengirim = (data.user ? data.user.nama : '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-                        let escapedPenerima = (data.penerima ? data.penerima.nama : '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-                        let escapedSifat = (data.sifat ? data.sifat.nama_sifat : '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-                        let escapedStatus = (data.status ? data.status.nama_status : '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-                        let escapedCatatan = (data.catatan_surat || '-').replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+                    render: function(data) {
+                        let escapedNomorSurat = (data.nomor_surat || '').replace(/"/g, '"').replace(/\n/g, '\\n');
+                        let escapedPerihal = (data.perihal || '').replace(/"/g, '"').replace(/\n/g, '\\n');
+                        let escapedIsiSurat = (data.isi_surat || '').replace(/"/g, '"').replace(/\n/g, '\\n');
+                        let escapedPengirim = (data.user ? data.user.nama : '-').replace(/"/g, '"').replace(/\n/g, '\\n');
+                        let escapedPenerima = (data.penerima ? data.penerima.nama : '-').replace(/"/g, '"').replace(/\n/g, '\\n');
+                        let escapedSifat = (data.sifat ? data.sifat.nama_sifat : '-').replace(/"/g, '"').replace(/\n/g, '\\n');
+                        let escapedStatus = (data.status ? data.status.nama_status : '-').replace(/"/g, '"').replace(/\n/g, '\\n');
+                        let escapedCatatan = (data.catatan_surat || '-').replace(/"/g, '"').replace(/\n/g, '\\n');
                         let lampiranUrl = data.lampiran ? '/storage/' + data.lampiran : '';
                         let tanggalSuratRaw = data.tanggal_surat_raw || '';
 
                         let actions = `
-                            <button onclick='openShowModal("${escapedNomorSurat}", "${data.tanggal_surat}", "${escapedPerihal}", "${escapedPengirim}", "${escapedPenerima}", "${escapedSifat}", "${escapedStatus}", "${escapedCatatan}", "${escapedIsiSurat}", "${lampiranUrl}")'
+                            <button onclick="openShowModal('${escapedNomorSurat}', '${data.tanggal_surat}', '${escapedPerihal}', '${escapedPengirim}', '${escapedPenerima}', '${escapedSifat}', '${escapedStatus}', '${escapedCatatan}', '${escapedIsiSurat}', '${lampiranUrl}')"
                                 class="text-blue-600 hover:text-blue-800 mr-2">
                                 <i class="fas fa-eye"></i> Lihat
                             </button>
                         `;
 
-                        if (data.status.nama_status === 'Draf') {
+                        if (data.status && data.status.nama_status === 'Draf') {
                             actions += `
-                                <button onclick='openEditModal(${data.id}, "${tanggalSuratRaw}", "${escapedPerihal}", "${data.penerima_id || ''}", "${escapedPenerima}", "${escapedIsiSurat}", "${data.sifat_surat_id || ''}", "${data.template_surat_id || ''}", "${lampiranUrl}", "${escapedCatatan}")'
+                                <button onclick="openEditModal(${data.id}, '${tanggalSuratRaw}', '${escapedPerihal}', '${data.penerima_id || ''}', '${escapedPenerima}', '${escapedIsiSurat}', '${data.sifat_surat_id || ''}', '${data.template_surat_id || ''}', '${lampiranUrl}', '${escapedCatatan}')"
                                     class="text-green-600 hover:text-green-800 mr-2">
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
@@ -567,18 +585,18 @@
                                     <i class="fas fa-trash"></i> Hapus
                                 </button>
                             `;
-                        } else if (data.status.nama_status === 'Menunggu Validasi') {
+                        } else if (data.status && data.status.nama_status === 'Menunggu Validasi') {
                             actions += `
-                                <button onclick='openAssignNumberModal(${data.id}, "${escapedNomorSurat}")'
+                                <button onclick="openAssignNumberModal(${data.id}, '${escapedNomorSurat}')"
                                     class="text-orange-600 hover:text-orange-800 mr-2">
                                     <i class="fas fa-tag"></i> Beri Nomor
                                 </button>
-                                <button onclick='openValidateModal(${data.id}, "${escapedNomorSurat}")'
+                                <button onclick="openValidateModal(${data.id}, '${escapedNomorSurat}')"
                                     class="text-purple-600 hover:text-purple-800 mr-2">
                                     <i class="fas fa-check-circle"></i> Validasi
                                 </button>
                             `;
-                        } else if (data.status.nama_status === 'Disetujui') {
+                        } else if (data.status && data.status.nama_status === 'Disetujui') {
                             actions += `
                                 <a href="{{ route('staff.surat-keluar.download', ':id') }}".replace(':id', ${data.id})
                                     class="text-green-600 hover:text-green-800 mr-2">
@@ -606,7 +624,7 @@
             }
         });
 
-        $('#status_filter, #role_filter').on('change', function () {
+        $('#status_filter, #role_filter').on('change', function() {
             table.ajax.reload();
         });
 

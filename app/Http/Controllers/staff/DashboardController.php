@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $suratMasukCount = SuratMasuk::where('user_id', Auth::id())->count();
 
         // Count total Surat Keluar processed by the staff (assuming staff can process all)
-        $suratKeluarCount = SuratKeluar::where('status_id', '!=', \App\Models\StatusSurat::where('nama_status', 'Draf')->first()->id ?? 0)->count();
+        $suratKeluarCount = SuratKeluar::where('user_id',Auth::id())->count();
 
         // Count pending Disposisi assigned to the staff
         $disposisiPendingCount = Disposisi::where('ke_user_id', Auth::id())
@@ -41,6 +41,7 @@ class DashboardController extends Controller
 
         // Fetch Surat Keluar pending validation (e.g., status "Menunggu Persetujuan")
         $suratKeluarPending = SuratKeluar::with('status')
+        ->where('user_id', Auth::id())
             ->where('status_id', \App\Models\StatusSurat::where('nama_status', 'Menunggu Persetujuan')->first()->id ?? 0)
             ->orderBy('tanggal_surat', 'desc')
             ->take(5)

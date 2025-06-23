@@ -19,6 +19,11 @@ use App\Http\Controllers\staff\SuratMasukController as StaffSuratMasukController
 use App\Http\Controllers\staff\SuratKeluarController as StaffSuratKeluarController;
 use App\Http\Controllers\staff\DisposisiController as StaffDisposisiController;
 use App\Http\Controllers\staff\TemplateController as StaffTemplateController;
+
+use App\Http\Controllers\pimpinan\DashboardController as PimpinanDashboardController;
+use App\Http\Controllers\pimpinan\SuratKeluarController as PimpinanSuratKeluarController;
+use App\Http\Controllers\pimpinan\SuratMasukController as PimpinanSuratMasukController;
+use App\Http\Controllers\pimpinan\DisposisiController as PimpinanDisposisiController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -65,8 +70,7 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->name('admin.')->grou
 });
 
 // cari data pengirim dan penerima surat
-    Route::get('search-users', [StaffSuratKeluarController::class, 'searchUsers'])->name('mahasiswa.search-users');
-
+Route::get('search-users', [StaffSuratKeluarController::class, 'searchUsers'])->name('mahasiswa.search-users');
 
 Route::prefix('mahasiswa')->middleware(['auth', 'role:mahasiswa'])->name('mahasiswa.')->group(function () {
     Route::get('/dashboard', [MahasiswaDashboardController::class, 'index'])->name('dashboard');
@@ -75,6 +79,23 @@ Route::prefix('mahasiswa')->middleware(['auth', 'role:mahasiswa'])->name('mahasi
     Route::resource('surat-keluar', MahasiswaSuratKeluarController::class)->except(['show']);
     Route::post('surat-keluar/draft', [MahasiswaSuratKeluarController::class, 'saveDraft'])->name('surat-keluar.draft');
     // Route::get('search-users', [MahasiswaSuratKeluarController::class, 'searchUsers'])->name('search-users');
+});
+Route::prefix('pimpinan')->middleware(['auth', 'role:pimpinan'])->name('pimpinan.')->group(function () {
+    Route::get('/dashboard', [PimpinanDashboardController::class, 'index'])->name('dashboard');
+
+    // Persetujuan Surat Keluar
+    Route::get('surat-keluar', [PimpinanSuratKeluarController::class, 'index'])->name('surat-keluar.index');
+    Route::get('surat-keluar/{surat_keluar}', [PimpinanSuratKeluarController::class, 'show'])->name('surat-keluar.show');
+    Route::post('surat-keluar/{surat_keluar}/approve', [PimpinanSuratKeluarController::class, 'approve'])->name('surat-keluar.approve');
+    Route::post('surat-keluar/{surat_keluar}/reject', [PimpinanSuratKeluarController::class, 'reject'])->name('surat-keluar.reject');
+    Route::get('/surat-keluar/{suratKeluar}/download', [PimpinanSuratKeluarController::class, 'download'])->name('surat-keluar.download');
+    // Melihat Surat Masuk (read-only)
+    Route::get('surat-masuk', [PimpinanSuratMasukController::class, 'index'])->name('surat-masuk.index');
+    Route::get('surat-masuk/{surat_masuk}', [PimpinanSuratMasukController::class, 'show'])->name('surat-masuk.show');
+
+    // Melihat Disposisi (read-only, mungkin yang ditujukan kepadanya)
+    Route::get('disposisi', [PimpinanDisposisiController::class, 'index'])->name('disposisi.index');
+    Route::get('disposisi/{disposisi}', [PimpinanDisposisiController::class, 'show'])->name('disposisi.show');
 });
 
 Route::prefix('staff')->middleware(['auth', 'role:staff,dosen'])->name('staff.')->group(function () {
@@ -85,14 +106,16 @@ Route::prefix('staff')->middleware(['auth', 'role:staff,dosen'])->name('staff.')
     Route::post('surat-masuk/{suratMasuk}/archive', [StaffSuratMasukController::class, 'archive'])->name('surat-masuk.archive');
     Route::get('surat-masuk/actionable', [StaffDashboardController::class, 'actionable'])->name('surat-masuk.actionable');
 
-
-    Route::resource('surat-keluar', StaffSuratKeluarController::class);
-    Route::post('surat-keluar/{suratKeluar}/validate', [StaffSuratKeluarController::class, 'validateSurat'])->name('surat-keluar.validate');
-    Route::post('surat-keluar/{suratKeluar}/number', [StaffSuratKeluarController::class, 'assignNumber'])->name('surat-keluar.number');
-    Route::post('surat-keluar/{suratKeluar}/forward', [StaffSuratKeluarController::class, 'forwardForApproval'])->name('surat-keluar.forward');
-    Route::get('surat-keluar/{suratKeluar}/download', [StaffSuratKeluarController::class, 'download'])->name('surat-keluar.download');
-    Route::resource('template-surat', StaffTemplateController::class)->only(['index']);
-    Route::get('templates/{templateSurat}', [StaffTemplateController::class, 'show'])->name('template-surat.show');
+    Route::get('/surat-keluar', [StaffSuratKeluarController::class, 'index'])->name('surat-keluar.index');
+    Route::post('/surat-keluar', [StaffSuratKeluarController::class, 'store'])->name('surat-keluar.store');
+    Route::put('/surat-keluar/{suratKeluar}', [StaffSuratKeluarController::class, 'update'])->name('surat-keluar.update');
+    Route::delete('/surat-keluar/{suratKeluar}', [StaffSuratKeluarController::class, 'destroy'])->name('surat-keluar.destroy');
+    Route::post('/surat-keluar/{suratKeluar}/validate', [StaffSuratKeluarController::class, 'validateSurat'])->name('surat-keluar.validate');
+    Route::post('/surat-keluar/{suratKeluar}/number', [StaffSuratKeluarController::class, 'assignNumber'])->name('surat-keluar.number');
+    Route::post('/surat-keluar/{suratKeluar}/forward', [StaffSuratKeluarController::class, 'forwardForApproval'])->name('surat-keluar.forward');
+    Route::get('/surat-keluar/{suratKeluar}/download', [StaffSuratKeluarController::class, 'download'])->name('surat-keluar.download');
+    Route::get('/search-users', [StaffSuratKeluarController::class, 'searchUsers'])->name('search-users');
+    Route::get('/template-surat/{id}', [StaffTemplateController::class, 'show'])->name('template-surat.show');
 
     Route::resource('templates', StaffTemplateController::class)->only([
         'index',

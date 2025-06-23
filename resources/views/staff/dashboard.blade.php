@@ -2,7 +2,7 @@
 
 @section('title', 'Dashboard')
 
-@section('page-title', 'Dashboard Staf TU')
+@section('page-title', 'Dashboard Staff')
 
 @section('content')
 <div class="bg-white p-6 rounded-lg shadow">
@@ -118,40 +118,7 @@
     </div>
 
     <!-- Surat Keluar Tertunda -->
-    <div>
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">Surat Keluar Perlu Validasi</h3>
-        @if($suratKeluarPending->isEmpty())
-            <div class="bg-gray-100 p-4 rounded-lg text-gray-600">
-                Tidak ada surat keluar yang perlu divalidasi.
-            </div>
-        @else
-            <table class="min-w-full bg-white border rounded-lg shadow">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Nomor Surat</th>
-                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Perihal</th>
-                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Status</th>
-                        <th class="px-6 py-3 text-left text-sm font-medium text-gray-600">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($suratKeluarPending as $surat)
-                        <tr class="border-b last:border-b-0">
-                            <td class="px-6 py-3 text-gray-700">{{ $surat->nomor_surat }}</td>
-                            <td class="px-6 py-3 text-gray-700">{{ $surat->perihal }}</td>
-                            <td class="px-6 py-3 text-gray-700">{{ $surat->status->nama_status }}</td>
-                            <td class="px-6 py-3">
-                                <a href="{{ route('staff.surat-keluar.show', $surat->id) }}"
-                                   class="text-indigo-600 hover:text-indigo-800">
-                                    <i class="fas fa-eye"></i> Lihat
-                                </a>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @endif
-    </div>
+
 </div>
 
 <!-- Scripts -->

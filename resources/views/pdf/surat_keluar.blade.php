@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Surat Keluar - {{ $surat->perihal }}</title>
+    <title>Surat Keluar - {{ $suratKeluar->perihal }}</title>
     <style>
         body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; }
         .container { width: 80%; margin: auto; padding: 20px; }
@@ -18,24 +18,24 @@
 <body>
     <div class="container">
         <div class="header">
-            <h3>KOP SURAT KAMPUS ANDA</h3>
-            <p>{{ $kampus_nama }}</p>
-            <p>{{ $kampus_alamat }}</p>
+            <h3>KOP SURAT</h3>
+            <p>UNIVESITAS BAHAUDIN MUDHARY MADURA</p>
+            <p>Jln Raya Lenteng, Aredake, Batuan, Kec. Batuan, Kabupaten Sumenep, Jawa Timur 69451</p>
             <hr style="border: 1px solid black;">
         </div>
 
-        <p style="text-align: right;">{{ $kampus_nama_kota }}, {{ \Carbon\Carbon::parse($surat->tanggal_surat)->format('d F Y') }}</p>
-        <p>Nomor: {{ $surat->nomor_surat }}</p>
-        <p>Sifat: {{ $surat->sifat->nama_sifat ?? 'Biasa' }}</p>
-        <p>Perihal: {{ $surat->perihal }}</p>
+        <p style="text-align: right;">UNIBA MADURA, {{ \Carbon\Carbon::parse($suratKeluar->tanggal_surat)->format('d F Y') }}</p>
+        <p>Nomor: {{ $suratKeluar->nomor_surat }}</p>
+        <p>Sifat: {{ $suratKeluar->sifat->nama_sifat ?? 'Biasa' }}</p>
+        <p>Perihal: {{ $suratKeluar->perihal }}</p>
         <br>
-        <p>Yth. {{ $surat->penerima }}</p>
+        <p>Yth. {{ $suratKeluar->penerima_id }}</p>
         <p>Di tempat</p>
         <br>
 
         <div class="content">
             {{-- Isi surat bisa berupa teks biasa atau HTML jika perlu formatting --}}
-            <pre style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; white-space: pre-wrap;">{{ $surat->isi_surat }}</pre>
+            <pre style="font-family: 'Times New Roman', Times, serif; font-size: 12pt; white-space: pre-wrap;">{{ $suratKeluar->isi_surat }}</pre>
         </div>
 
         <div class="signature">
