@@ -33,8 +33,8 @@
                 @forelse ($disposisiDiterima as $disposisi)
                     <tr>
                         <td>{{ $loop->iteration }}</td>
-                        <td>{{ $disposisi->suratMasuk->nomor_agenda ?? 'N/A' }}</td>
-                        <td>{{ $disposisi->suratMasuk->perihal ?? 'N/A' }}</td>
+                        <td>{{ $disposisi->surat_masuk->nomor_agenda ?? 'N/A' }}</td>
+                        <td>{{ $disposisi->surat_masuk->perihal ?? 'N/A' }}</td>
                         <td>{{ $disposisi->dariUser->nama ?? 'N/A' }}</td>
                         <td>{{ Str::limit($disposisi->instruksi, 50) }}</td>
                         <td><span class="badge bg-primary">{{ $disposisi->status_disposisi }}</span></td>

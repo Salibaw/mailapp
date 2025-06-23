@@ -6,10 +6,10 @@
 
     <div class="card mb-3">
         <div class="card-body">
-            <h5 class="card-title">Disposisi Surat: {{ $disposisi->suratMasuk->nomor_agenda ?? 'N/A' }}</h5>
-            <p class="card-text"><strong>Perihal Surat:</strong> {{ $disposisi->suratMasuk->perihal ?? 'N/A' }}</p>
-            <p class="card-text"><strong>Dari (Pemberi Disposisi):</strong> {{ $disposisi->dariUser->nama ?? 'N/A' }} ({{ $disposisi->dariUser->userType->nama_tipe ?? 'N/A' }})</p>
-            <p class="card-text"><strong>Kepada:</strong> {{ $disposisi->keUser->nama ?? 'N/A' }} ({{ $disposisi->keUser->userType->nama_tipe ?? 'N/A' }})</p>
+            <h5 class="card-title">Disposisi Surat: {{ $disposisi->surat_masuk->nomor_agenda ?? 'N/A' }}</h5>
+            <p class="card-text"><strong>Perihal Surat:</strong> {{ $disposisi->surat_masuk->perihal ?? 'N/A' }}</p>
+            <p class="card-text"><strong>Dari (Pemberi Disposisi):</strong> {{ $disposisi->dariUser->nama ?? 'N/A' }} ({{ $disposisi->dariUser->role->name ?? 'N/A' }})</p>
+            <p class="card-text"><strong>Kepada:</strong> {{ $disposisi->keUser->nama ?? 'N/A' }} ({{ $disposisi->keUser->role->name ?? 'N/A' }})</p>
             <p class="card-text"><strong>Tanggal Disposisi:</strong> {{ $disposisi->tanggal_disposisi->translatedFormat('d F Y H:i') }}</p>
             <p class="card-text"><strong>Status Disposisi:</strong> <span class="badge bg-primary">{{ $disposisi->status_disposisi }}</span></p>
 

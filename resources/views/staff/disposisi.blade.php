@@ -200,7 +200,7 @@
                     return {
                         results: data.map(user => ({
                             id: user.id,
-                            text: `${user.nama} (${user.nip_nim})`
+                            text: `${user.nama} (${user.email})`
                         }))
                     };
                 },

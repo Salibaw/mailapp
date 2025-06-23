@@ -44,11 +44,6 @@ class SuratKeluarController extends Controller
                 $query->where('status_id', $request->status_id);
             }
 
-            if ($request->role) {
-                $query->whereHas('user', function ($q) use ($request) {
-                    $q->where('role_id', $request->role);
-                });
-            }
 
             return DataTables::of($query)
                 ->addIndexColumn()

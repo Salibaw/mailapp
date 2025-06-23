@@ -51,7 +51,7 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $surat->perihal }}</td>
-                            <td>{{ $surat->user->nama ?? 'N/A' }} ({{ $surat->user->userType->nama_tipe ?? 'N/A' }})</td>
+                            <td>{{ $surat->user->nama ?? 'N/A' }} ({{ $surat->user->email ?? 'N/A' }})</td>
                             <td>{{ $surat->created_at->translatedFormat('d M Y') }}</td>
                             <td>
                                 <a href="{{ route('pimpinan.surat-keluar.show', $surat->id) }}" class="btn btn-info btn-sm">Lihat & Proses</a>
@@ -83,8 +83,8 @@
                     @foreach ($disposisiMasukUntukPimpinan as $disposisi)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $disposisi->suratMasuk->nomor_agenda ?? 'N/A' }}</td>
-                            <td>{{ $disposisi->suratMasuk->perihal ?? 'N/A' }}</td>
+                            <td>{{ $disposisi->surat_masuk->nomor_agenda ?? 'N/A' }}</td>
+                            <td>{{ $disposisi->surat_masuk->perihal ?? 'N/A' }}</td>
                             <td>{{ $disposisi->dariUser->nama ?? 'N/A' }}</td>
                             <td>{{ $disposisi->instruksi }}</td>
                             <td>{{ $disposisi->tanggal_disposisi->translatedFormat('d M Y H:i') }}</td>

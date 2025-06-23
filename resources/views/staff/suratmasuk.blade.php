@@ -27,12 +27,12 @@
     @endif
 
     <!-- Header and Create Button -->
-    <div class="flex justify-between items-center mb-4">
+    <!-- <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-gray-800">Daftar Surat Masuk</h2>
         <a href="#" onclick="openModal('createModal')" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 flex items-center">
             <i class="fas fa-plus mr-2"></i> Catat Surat Masuk
         </a>
-    </div>
+    </div> -->
 
     <!-- Filter Status -->
     <div class="mb-4">

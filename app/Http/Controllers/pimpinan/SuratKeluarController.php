@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SuratKeluar;
 use App\Models\StatusSurat;
 use App\Models\PersetujuanSuratKeluar;
+use App\Models\SuratMasuk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
@@ -45,7 +46,7 @@ class SuratKeluarController extends Controller
     /**
      * Approve the specified outgoing letter.
      */
-    public function approve(Request $request, SuratKeluar $suratKeluar)
+    public function approve(Request $request, SuratKeluar $suratKeluar, SuratMasuk $suratMasuk)
     {
         // Pastikan surat memang statusnya 'Menunggu Persetujuan'
         if ($suratKeluar->status->nama_status !== 'Menunggu Persetujuan') {
@@ -66,8 +67,11 @@ class SuratKeluarController extends Controller
             // 'nomor_surat' => $suratKeluar->nomor_surat ?? 'GEN_NOMOR_OTOMATIS',
             // 'tanggal_surat' => $suratKeluar->tanggal_surat ?? Carbon::now()->toDateString(),
         ]);
+        $suratMasuk->update([
+            'status_id' => $statusDisetujui->id, // Update status surat masuk terkait
+        ]);
 
-        PersetujuanSuratKeluar::create([
+        PersetujuanSuratKeluar::create([    
             'surat_keluar_id' => $suratKeluar->id,
             'user_id_penyetuju' => Auth::id(), // ID Pimpinan yang menyetujui
             'status_persetujuan' => 'Disetujui',
@@ -81,26 +85,29 @@ class SuratKeluarController extends Controller
     /**
      * Reject the specified outgoing letter.
      */
-    public function reject(Request $request, SuratKeluar $suratKeluar)
+    public function reject(Request $request, SuratKeluar $surat_keluar, SuratMasuk $suratMasuk)
     {
         // Pastikan surat memang statusnya 'Menunggu Persetujuan'
-        if ($suratKeluar->status->nama_status !== 'Menunggu Persetujuan') {
-            return redirect()->back()->with('error', 'Surat ini tidak dalam status menunggu persetujuan.');
-        }
+        // if ($suratKeluar->status->nama_status !== 'Menunggu Persetujuan') {
+        //     return redirect()->back()->with('error', 'Surat ini tidak dalam status menunggu persetujuan.');
+        // }
 
         $request->validate([
-            'catatan_penolakan' => 'required|string|min:10',
+            'catatan_penolakan' => 'required|string',
         ]);
 
         $statusDitolak = StatusSurat::where('nama_status', 'Ditolak')->firstOrFail();
 
-        $suratKeluar->update([
+        $surat_keluar->update([
             'status_id' => $statusDitolak->id,
+        ]);
+        $suratMasuk->update([
+            'status_id' => $statusDitolak->id, 
         ]);
 
         PersetujuanSuratKeluar::create([
-            'surat_keluar_id' => $suratKeluar->id,
-            'user_id_penyetuju' => Auth::id(), // ID Pimpinan yang menolak
+            'surat_keluar_id' => $surat_keluar->id,
+            'user_id_penyetuju' => Auth::id(), 
             'status_persetujuan' => 'Ditolak',
             'catatan' => $request->catatan_penolakan,
             'tanggal_persetujuan' => Carbon::now(),
